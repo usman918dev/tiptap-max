@@ -16,6 +16,9 @@ import Typography from '@tiptap/extension-typography';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
+import { Color } from '@tiptap/extension-color';
+import TextStyle from '@tiptap/extension-text-style';
+import FontFamily from '@tiptap/extension-font-family';
 import { common, createLowlight } from 'lowlight';
 import { Node } from '@tiptap/core';
 import {
@@ -34,7 +37,6 @@ import {
     Code2,
     Link as LinkIcon,
     Unlink,
-    ExternalLink,
     Image as ImageIcon,
     Upload,
     Table as TableIcon,
@@ -51,7 +53,9 @@ import {
     Superscript as SuperscriptIcon,
     ChevronDown,
     FileCode,
-    X
+    X,
+    Type,
+    Palette
 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -121,28 +125,43 @@ const HtmlBlock = Node.create({
 });
 
 const MenuBar = ({ editor }) => {
-    const [showCustomLinkDialog, setShowCustomLinkDialog] = useState(false);
     const [showImageDialog, setShowImageDialog] = useState(false);
     const [showHtmlDialog, setShowHtmlDialog] = useState(false);
-    const [linkUrl, setLinkUrl] = useState('');
-    const [linkText, setLinkText] = useState('');
     const [linkFollow, setLinkFollow] = useState(false);
-    const [linkStyle, setLinkStyle] = useState('default');
     const [imageUrl, setImageUrl] = useState('');
     const [imageAlt, setImageAlt] = useState('');
     const [isImageUploading, setIsImageUploading] = useState(false);
     const [htmlContent, setHtmlContent] = useState('');
     const [isInTable, setIsInTable] = useState(false);
     const [highlightColor, setHighlightColor] = useState('#fef08a');
+    const [textColor, setTextColor] = useState('#000000');
+    const [fontSize, setFontSize] = useState('16px');
+    const [fontFamily, setFontFamily] = useState('Inter');
 
-    const linkStyles = {
-        default: '!text-inherit no-underline hover:!text-blue-600',
-        button: 'inline-block !bg-blue-600 !text-white px-4 py-2 rounded-lg hover:!bg-blue-700 transition-colors no-underline',
-        buttonGreen: 'inline-block !bg-green-600 !text-white px-4 py-2 rounded-lg hover:!bg-green-700 transition-colors no-underline',
-        buttonRed: 'inline-block !bg-red-600 !text-white px-4 py-2 rounded-lg hover:!bg-red-700 transition-colors no-underline',
-        outline: 'inline-block border-2 !border-blue-600 !text-blue-600 px-4 py-2 rounded-lg hover:!bg-blue-600 hover:!text-white transition-colors no-underline',
-        badge: 'inline-block !bg-gray-100 !text-gray-800 px-3 py-1 rounded-full text-sm font-medium hover:!bg-gray-200 no-underline',
-    };
+    const fontFamilies = [
+        'Inter',
+        'Arial',
+        'Helvetica',
+        'Times New Roman',
+        'Georgia',
+        'Courier New',
+        'Verdana',
+        'Comic Sans MS',
+        'Impact',
+    ];
+
+    const fontSizes = [
+        '12px',
+        '14px',
+        '16px',
+        '18px',
+        '20px',
+        '24px',
+        '28px',
+        '32px',
+        '36px',
+        '48px',
+    ];
 
     useEffect(() => {
         if (!editor) return;
@@ -158,11 +177,6 @@ const MenuBar = ({ editor }) => {
             editor.off('selectionUpdate', updateTableState);
             editor.off('transaction', updateTableState);
         };
-    }, [editor]);
-
-    const addCustomLink = useCallback(() => {
-        if (!editor) return;
-        setShowCustomLinkDialog(true);
     }, [editor]);
 
     const addImage = useCallback(() => {
@@ -241,37 +255,6 @@ const MenuBar = ({ editor }) => {
         setHtmlContent('');
     }, [editor, htmlContent]);
 
-    const insertCustomLink = useCallback(() => {
-        if (!editor || !linkUrl || !linkText) return;
-
-        const rel = linkFollow ? '' : 'nofollow';
-        const className = linkStyles[linkStyle] || linkStyles.default;
-
-        editor
-            .chain()
-            .focus()
-            .insertContent({
-                type: 'text',
-                marks: [
-                    {
-                        type: 'link',
-                        attrs: {
-                            href: linkUrl,
-                            rel,
-                            class: className,
-                        },
-                    },
-                ],
-                text: linkText,
-            })
-            .run();
-
-        setShowCustomLinkDialog(false);
-        setLinkUrl('');
-        setLinkText('');
-        setLinkStyle('default');
-    }, [editor, linkUrl, linkText, linkFollow, linkStyle, linkStyles]);
-
     const addLink = useCallback(() => {
         if (!editor) return;
 
@@ -295,6 +278,7 @@ const MenuBar = ({ editor }) => {
         <button
             type="button"
             onClick={onClick}
+            onMouseDown={(e) => e.preventDefault()}
             disabled={disabled}
             className={`p-2 rounded-lg transition-all duration-200 ${isActive
                     ? 'bg-[var(--color-primary)] text-white shadow-lg'
@@ -352,81 +336,263 @@ const MenuBar = ({ editor }) => {
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
-            <Button
-                onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                isActive={editor.isActive('heading', { level: 1 })}
-                title="Heading 1"
-            >
-                <Heading1 className="h-4 w-4" />
-            </Button>
+            {/* Font Family Dropdown */}
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                    <button
+                        type="button"
+                        className="p-2 px-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1"
+                        title="Font Family"
+                    >
+                        <Type className="h-4 w-4" />
+                        <ChevronDown className="h-3 w-3" />
+                    </button>
+                </DropdownMenu.Trigger>
 
-            <Button
-                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                isActive={editor.isActive('heading', { level: 2 })}
-                title="Heading 2"
-            >
-                <Heading2 className="h-4 w-4" />
-            </Button>
+                <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                        className="min-w-[180px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50 max-h-[300px] overflow-y-auto"
+                        sideOffset={5}
+                    >
+                        {fontFamilies.map((font) => (
+                            <DropdownMenu.Item
+                                key={font}
+                                className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                                onSelect={() => {
+                                    editor.chain().focus().setFontFamily(font).run();
+                                    setFontFamily(font);
+                                }}
+                                style={{ fontFamily: font }}
+                            >
+                                {font}
+                            </DropdownMenu.Item>
+                        ))}
+                    </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+            </DropdownMenu.Root>
 
-            <Button
-                onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                isActive={editor.isActive('heading', { level: 3 })}
-                title="Heading 3"
-            >
-                <Heading3 className="h-4 w-4" />
-            </Button>
+            {/* Font Size Dropdown */}
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                    <button
+                        type="button"
+                        className="p-2 px-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1 text-xs font-medium"
+                        title="Font Size"
+                    >
+                        {fontSize}
+                        <ChevronDown className="h-3 w-3" />
+                    </button>
+                </DropdownMenu.Trigger>
+
+                <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                        className="min-w-[120px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50 max-h-[300px] overflow-y-auto"
+                        sideOffset={5}
+                    >
+                        {fontSizes.map((size) => (
+                            <DropdownMenu.Item
+                                key={size}
+                                className="flex items-center justify-center px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                                onSelect={() => {
+                                    editor.chain().focus().setMark('textStyle', { fontSize: size }).run();
+                                    setFontSize(size);
+                                }}
+                            >
+                                {size}
+                            </DropdownMenu.Item>
+                        ))}
+                    </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+
+            {/* Text Color Picker */}
+            <div className="relative inline-flex items-center">
+                <Button
+                    onClick={() => editor.chain().focus().setColor(textColor).run()}
+                    title="Text Color"
+                >
+                    <Palette className="h-4 w-4" />
+                </Button>
+                <input
+                    type="color"
+                    value={textColor}
+                    onChange={(e) => {
+                        setTextColor(e.target.value);
+                        editor.chain().focus().setColor(e.target.value).run();
+                    }}
+                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[var(--border-secondary)] cursor-pointer"
+                    title="Choose Text Color"
+                />
+            </div>
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
-            <Button
-                onClick={() => editor.chain().focus().setTextAlign('left').run()}
-                isActive={editor.isActive({ textAlign: 'left' })}
-                title="Align Left"
-            >
-                <AlignLeft className="h-4 w-4" />
-            </Button>
+            {/* Headings Dropdown */}
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                    <button
+                        type="button"
+                        className={`p-2 rounded-lg transition-all duration-200 flex items-center gap-1 ${
+                            editor.isActive('heading')
+                                ? 'bg-[var(--color-primary)] text-white shadow-lg'
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)]'
+                        }`}
+                        title="Headings"
+                    >
+                        {editor.isActive('heading', { level: 1 }) ? (
+                            <Heading1 className="h-4 w-4" />
+                        ) : editor.isActive('heading', { level: 2 }) ? (
+                            <Heading2 className="h-4 w-4" />
+                        ) : editor.isActive('heading', { level: 3 }) ? (
+                            <Heading3 className="h-4 w-4" />
+                        ) : (
+                            <Heading1 className="h-4 w-4" />
+                        )}
+                        <ChevronDown className="h-3 w-3" />
+                    </button>
+                </DropdownMenu.Trigger>
 
-            <Button
-                onClick={() => editor.chain().focus().setTextAlign('center').run()}
-                isActive={editor.isActive({ textAlign: 'center' })}
-                title="Align Center"
-            >
-                <AlignCenter className="h-4 w-4" />
-            </Button>
+                <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                        className="min-w-[180px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50"
+                        sideOffset={5}
+                    >
+                        <DropdownMenu.Item
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                            onSelect={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                        >
+                            <Heading1 className="h-4 w-4" />
+                            Heading 1
+                        </DropdownMenu.Item>
 
-            <Button
-                onClick={() => editor.chain().focus().setTextAlign('right').run()}
-                isActive={editor.isActive({ textAlign: 'right' })}
-                title="Align Right"
-            >
-                <AlignRight className="h-4 w-4" />
-            </Button>
+                        <DropdownMenu.Item
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                            onSelect={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                        >
+                            <Heading2 className="h-4 w-4" />
+                            Heading 2
+                        </DropdownMenu.Item>
 
-            <Button
-                onClick={() => editor.chain().focus().setTextAlign('justify').run()}
-                isActive={editor.isActive({ textAlign: 'justify' })}
-                title="Justify"
-            >
-                <AlignJustify className="h-4 w-4" />
-            </Button>
+                        <DropdownMenu.Item
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                            onSelect={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                        >
+                            <Heading3 className="h-4 w-4" />
+                            Heading 3
+                        </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+            </DropdownMenu.Root>
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
-            <Button
-                onClick={() => editor.chain().focus().toggleBulletList().run()}
-                isActive={editor.isActive('bulletList')}
-                title="Bullet List"
-            >
-                <List className="h-4 w-4" />
-            </Button>
+            {/* Alignment Dropdown */}
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                    <button
+                        type="button"
+                        className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1"
+                        title="Text Alignment"
+                    >
+                        {editor.isActive({ textAlign: 'center' }) ? (
+                            <AlignCenter className="h-4 w-4" />
+                        ) : editor.isActive({ textAlign: 'right' }) ? (
+                            <AlignRight className="h-4 w-4" />
+                        ) : editor.isActive({ textAlign: 'justify' }) ? (
+                            <AlignJustify className="h-4 w-4" />
+                        ) : (
+                            <AlignLeft className="h-4 w-4" />
+                        )}
+                        <ChevronDown className="h-3 w-3" />
+                    </button>
+                </DropdownMenu.Trigger>
 
-            <Button
-                onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                isActive={editor.isActive('orderedList')}
-                title="Ordered List"
-            >
-                <ListOrdered className="h-4 w-4" />
-            </Button>
+                <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                        className="min-w-[160px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50"
+                        sideOffset={5}
+                    >
+                        <DropdownMenu.Item
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                            onSelect={() => editor.chain().focus().setTextAlign('left').run()}
+                        >
+                            <AlignLeft className="h-4 w-4" />
+                            Align Left
+                        </DropdownMenu.Item>
+
+                        <DropdownMenu.Item
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                            onSelect={() => editor.chain().focus().setTextAlign('center').run()}
+                        >
+                            <AlignCenter className="h-4 w-4" />
+                            Align Center
+                        </DropdownMenu.Item>
+
+                        <DropdownMenu.Item
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                            onSelect={() => editor.chain().focus().setTextAlign('right').run()}
+                        >
+                            <AlignRight className="h-4 w-4" />
+                            Align Right
+                        </DropdownMenu.Item>
+
+                        <DropdownMenu.Item
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                            onSelect={() => editor.chain().focus().setTextAlign('justify').run()}
+                        >
+                            <AlignJustify className="h-4 w-4" />
+                            Justify
+                        </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+
+            {/* Lists Dropdown */}
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                    <button
+                        type="button"
+                        className={`p-2 rounded-lg transition-all duration-200 flex items-center gap-1 ${
+                            editor.isActive('bulletList') || editor.isActive('orderedList')
+                                ? 'bg-[var(--color-primary)] text-white shadow-lg'
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)]'
+                        }`}
+                        title="Lists"
+                    >
+                        {editor.isActive('orderedList') ? (
+                            <ListOrdered className="h-4 w-4" />
+                        ) : (
+                            <List className="h-4 w-4" />
+                        )}
+                        <ChevronDown className="h-3 w-3" />
+                    </button>
+                </DropdownMenu.Trigger>
+
+                <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                        className="min-w-[160px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50"
+                        sideOffset={5}
+                    >
+                        <DropdownMenu.Item
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                            onSelect={() => editor.chain().focus().toggleBulletList().run()}
+                        >
+                            <List className="h-4 w-4" />
+                            Bullet List
+                        </DropdownMenu.Item>
+
+                        <DropdownMenu.Item
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                            onSelect={() => editor.chain().focus().toggleOrderedList().run()}
+                        >
+                            <ListOrdered className="h-4 w-4" />
+                            Ordered List
+                        </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+            </DropdownMenu.Root>
 
             <Button
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -580,13 +746,6 @@ const MenuBar = ({ editor }) => {
             </Button>
 
             <Button
-                onClick={addCustomLink}
-                title="Add Custom Styled Link"
-            >
-                <ExternalLink className="h-4 w-4" />
-            </Button>
-
-            <Button
                 onClick={removeLink}
                 disabled={!editor.isActive('link')}
                 title="Remove Link"
@@ -638,107 +797,6 @@ const MenuBar = ({ editor }) => {
             >
                 <Redo className="h-4 w-4" />
             </Button>
-
-            {/* Custom Link Dialog */}
-            {showCustomLinkDialog && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-                    <div className="bg-[var(--bg-elevated)] rounded-2xl max-w-lg w-full shadow-2xl border border-[var(--border-primary)]">
-                        <div className="bg-gradient-to-r from-[var(--color-primary)] to-purple-600 px-6 py-4 rounded-t-2xl">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <div className="bg-white/20 p-2 rounded-lg">
-                                        <ExternalLink className="h-5 w-5 text-white" />
-                                    </div>
-                                    <h3 className="text-xl font-semibold text-white">Add Custom Link</h3>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        setShowCustomLinkDialog(false);
-                                        setLinkUrl('');
-                                        setLinkText('');
-                                        setLinkStyle('default');
-                                    }}
-                                    className="text-white/80 hover:text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-[var(--text-primary)]">Link Text *</label>
-                                <input
-                                    type="text"
-                                    value={linkText}
-                                    onChange={(e) => setLinkText(e.target.value)}
-                                    placeholder="e.g., Download Now, Learn More"
-                                    className="w-full px-4 py-3 bg-[var(--bg-surface)] border-2 border-[var(--border-secondary)] rounded-xl focus:border-[var(--color-primary)] transition-all outline-none text-[var(--text-primary)]"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-[var(--text-primary)]">Destination URL *</label>
-                                <input
-                                    type="url"
-                                    value={linkUrl}
-                                    onChange={(e) => setLinkUrl(e.target.value)}
-                                    placeholder="https://example.com"
-                                    className="w-full px-4 py-3 bg-[var(--bg-surface)] border-2 border-[var(--border-secondary)] rounded-xl focus:border-[var(--color-primary)] transition-all outline-none text-[var(--text-primary)]"
-                                />
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="text-sm font-semibold text-[var(--text-primary)]">Choose Style</label>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {Object.entries(linkStyles).map(([key, className]) => (
-                                        <label
-                                            key={key}
-                                            className={`relative flex items-center p-3 border-2 rounded-xl cursor-pointer transition-all ${linkStyle === key
-                                                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10'
-                                                    : 'border-[var(--border-secondary)] hover:border-[var(--color-primary)]/50'
-                                                }`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="linkStyle"
-                                                value={key}
-                                                checked={linkStyle === key}
-                                                onChange={(e) => setLinkStyle(e.target.value)}
-                                                className="w-4 h-4 accent-[var(--color-primary)]"
-                                            />
-                                            <span className="ml-3 text-sm font-medium text-[var(--text-primary)] capitalize">
-                                                {key.replace(/([A-Z])/g, ' $1').trim()}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="px-6 py-4 bg-[var(--bg-surface)] rounded-b-2xl border-t border-[var(--border-secondary)] flex justify-end space-x-3">
-                            <button
-                                onClick={() => {
-                                    setShowCustomLinkDialog(false);
-                                    setLinkUrl('');
-                                    setLinkText('');
-                                    setLinkStyle('default');
-                                }}
-                                className="px-5 py-2.5 text-[var(--text-secondary)] bg-[var(--bg-elevated)] border-2 border-[var(--border-secondary)] rounded-lg hover:bg-[var(--bg-base)] transition-all font-medium"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={insertCustomLink}
-                                disabled={!linkUrl || !linkText}
-                                className="px-5 py-2.5 bg-gradient-to-r from-[var(--color-primary)] to-purple-600 text-white rounded-lg transition-all font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Insert Link
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Image Upload Dialog */}
             {showImageDialog && (
@@ -944,6 +1002,9 @@ export default function BlogEditor({ content, onChange, placeholder = "Start wri
             StarterKit,
             Underline,
             Typography,
+            TextStyle,
+            Color,
+            FontFamily,
             TextAlign.configure({
                 types: ['heading', 'paragraph'],
                 alignments: ['left', 'center', 'right', 'justify'],
