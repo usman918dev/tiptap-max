@@ -32,7 +32,7 @@ export default function PlaygroundPage() {
     return (
         <div className="min-h-screen bg-[var(--bg-base)] flex flex-col">
             {/* Top Navigation Bar */}
-            <div className="sticky top-0 z-50 border-b border-[var(--border-secondary)] backdrop-blur-xl bg-[var(--bg-base)]/80">
+            <div className="top-0 z-50 border-b border-[var(--border-secondary)] backdrop-blur-xl bg-[var(--bg-base)]/80">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         {/* Left: Back button and breadcrumb */}

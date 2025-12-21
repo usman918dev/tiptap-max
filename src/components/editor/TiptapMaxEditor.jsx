@@ -36,6 +36,7 @@ const DEFAULT_CONTENT = `
 <blockquote>
   <p>💡 <strong>Pro tip:</strong> Your content is automatically saved to local storage!</p>
 </blockquote>
+<a href="techo.com">techo</a>
 <p>Try editing this text and refresh the page - your changes will persist.</p>
 `;
 

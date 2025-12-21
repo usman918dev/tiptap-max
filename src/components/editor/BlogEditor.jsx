@@ -60,6 +60,8 @@ import {
 import { useEffect, useState, useCallback } from 'react';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import LinkDialog from './LinkDialog';
+import ImageDialog from './ImageDialog';
 
 const lowlight = createLowlight(common);
 
@@ -127,10 +129,7 @@ const HtmlBlock = Node.create({
 const MenuBar = ({ editor }) => {
     const [showImageDialog, setShowImageDialog] = useState(false);
     const [showHtmlDialog, setShowHtmlDialog] = useState(false);
-    const [linkFollow, setLinkFollow] = useState(false);
-    const [imageUrl, setImageUrl] = useState('');
-    const [imageAlt, setImageAlt] = useState('');
-    const [isImageUploading, setIsImageUploading] = useState(false);
+    const [showLinkDialog, setShowLinkDialog] = useState(false);
     const [htmlContent, setHtmlContent] = useState('');
     const [isInTable, setIsInTable] = useState(false);
     const [highlightColor, setHighlightColor] = useState('#fef08a');
@@ -189,55 +188,18 @@ const MenuBar = ({ editor }) => {
         setShowHtmlDialog(true);
     }, [editor]);
 
-    const handleImageUpload = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (!file.type.startsWith('image/')) {
-            alert('Please select a valid image file');
-            return;
-        }
-
-        if (file.size > 5 * 1024 * 1024) {
-            alert('Image size must be less than 5MB');
-            return;
-        }
-
-        setIsImageUploading(true);
-
-        try {
-            const result = await uploadToCloudinary(file, 'blog-images');
-
-            if (!result.success) {
-                alert(result.error || 'Failed to upload image. Please try again.');
-                return;
-            }
-
-            setImageUrl(result.url);
-        } catch (err) {
-            alert('Failed to upload image. Please try again.');
-            console.error('Upload error:', err);
-        } finally {
-            setIsImageUploading(false);
-        }
-    };
-
-    const insertImage = useCallback(() => {
-        if (!editor || !imageUrl || !imageAlt) return;
+    const handleImageInsert = useCallback(({ url, alt }) => {
+        if (!editor) return;
 
         editor
             .chain()
             .focus()
             .setImage({
-                src: imageUrl,
-                alt: imageAlt,
+                src: url,
+                alt: alt,
             })
             .run();
-
-        setShowImageDialog(false);
-        setImageUrl('');
-        setImageAlt('');
-    }, [editor, imageUrl, imageAlt]);
+    }, [editor]);
 
     const insertHtmlBlock = useCallback(() => {
         if (!editor || !htmlContent) return;
@@ -255,15 +217,29 @@ const MenuBar = ({ editor }) => {
         setHtmlContent('');
     }, [editor, htmlContent]);
 
-    const addLink = useCallback(() => {
+    const handleLinkInsert = useCallback(({ url, linkText, rel }) => {
         if (!editor) return;
 
-        const url = window.prompt('Enter URL:');
-        if (url) {
-            const rel = linkFollow ? '' : 'nofollow';
-            editor.chain().focus().setLink({ href: url, rel }).run();
+        // If linkText is provided and there's no selection, insert text with link
+        if (linkText && editor.state.selection.empty) {
+            editor
+                .chain()
+                .focus()
+                .insertContent({
+                    type: 'text',
+                    text: linkText,
+                    marks: [{ type: 'link', attrs: { href: url, rel: rel || null } }],
+                })
+                .run();
+        } else {
+            // Otherwise just apply link to selection
+            editor
+                .chain()
+                .focus()
+                .setLink({ href: url, rel: rel || null })
+                .run();
         }
-    }, [editor, linkFollow]);
+    }, [editor]);
 
     const removeLink = useCallback(() => {
         if (!editor) return;
@@ -292,10 +268,28 @@ const MenuBar = ({ editor }) => {
 
     return (
         <div className="editor-toolbar flex flex-wrap gap-1 items-center">
+            {/* Undo/Redo - Most Important */}
+            <Button
+                onClick={() => editor.chain().focus().undo().run()}
+                title="Undo (Ctrl+Z)"
+            >
+                <Undo className="h-4 w-4" />
+            </Button>
+
+            <Button
+                onClick={() => editor.chain().focus().redo().run()}
+                title="Redo (Ctrl+Y)"
+            >
+                <Redo className="h-4 w-4" />
+            </Button>
+
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+
+            {/* Basic Text Formatting */}
             <Button
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 isActive={editor.isActive('bold')}
-                title="Bold"
+                title="Bold (Ctrl+B)"
             >
                 <Bold className="h-4 w-4" />
             </Button>
@@ -303,7 +297,7 @@ const MenuBar = ({ editor }) => {
             <Button
                 onClick={() => editor.chain().focus().toggleItalic().run()}
                 isActive={editor.isActive('italic')}
-                title="Italic"
+                title="Italic (Ctrl+I)"
             >
                 <Italic className="h-4 w-4" />
             </Button>
@@ -311,119 +305,10 @@ const MenuBar = ({ editor }) => {
             <Button
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
                 isActive={editor.isActive('underline')}
-                title="Underline"
+                title="Underline (Ctrl+U)"
             >
                 <UnderlineIcon className="h-4 w-4" />
             </Button>
-
-            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
-
-            <Button
-                onClick={() => editor.chain().focus().toggleCode().run()}
-                isActive={editor.isActive('code')}
-                title="Inline Code"
-            >
-                <Code className="h-4 w-4" />
-            </Button>
-
-            <Button
-                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-                isActive={editor.isActive('codeBlock')}
-                title="Code Block"
-            >
-                <Code2 className="h-4 w-4" />
-            </Button>
-
-            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
-
-            {/* Font Family Dropdown */}
-            <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                    <button
-                        type="button"
-                        className="p-2 px-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1"
-                        title="Font Family"
-                    >
-                        <Type className="h-4 w-4" />
-                        <ChevronDown className="h-3 w-3" />
-                    </button>
-                </DropdownMenu.Trigger>
-
-                <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                        className="min-w-[180px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50 max-h-[300px] overflow-y-auto"
-                        sideOffset={5}
-                    >
-                        {fontFamilies.map((font) => (
-                            <DropdownMenu.Item
-                                key={font}
-                                className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                                onSelect={() => {
-                                    editor.chain().focus().setFontFamily(font).run();
-                                    setFontFamily(font);
-                                }}
-                                style={{ fontFamily: font }}
-                            >
-                                {font}
-                            </DropdownMenu.Item>
-                        ))}
-                    </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-
-            {/* Font Size Dropdown */}
-            <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                    <button
-                        type="button"
-                        className="p-2 px-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1 text-xs font-medium"
-                        title="Font Size"
-                    >
-                        {fontSize}
-                        <ChevronDown className="h-3 w-3" />
-                    </button>
-                </DropdownMenu.Trigger>
-
-                <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                        className="min-w-[120px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50 max-h-[300px] overflow-y-auto"
-                        sideOffset={5}
-                    >
-                        {fontSizes.map((size) => (
-                            <DropdownMenu.Item
-                                key={size}
-                                className="flex items-center justify-center px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                                onSelect={() => {
-                                    editor.chain().focus().setMark('textStyle', { fontSize: size }).run();
-                                    setFontSize(size);
-                                }}
-                            >
-                                {size}
-                            </DropdownMenu.Item>
-                        ))}
-                    </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-
-            {/* Text Color Picker */}
-            <div className="relative inline-flex items-center">
-                <Button
-                    onClick={() => editor.chain().focus().setColor(textColor).run()}
-                    title="Text Color"
-                >
-                    <Palette className="h-4 w-4" />
-                </Button>
-                <input
-                    type="color"
-                    value={textColor}
-                    onChange={(e) => {
-                        setTextColor(e.target.value);
-                        editor.chain().focus().setColor(e.target.value).run();
-                    }}
-                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[var(--border-secondary)] cursor-pointer"
-                    title="Choose Text Color"
-                />
-            </div>
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
@@ -594,6 +479,57 @@ const MenuBar = ({ editor }) => {
                 </DropdownMenu.Portal>
             </DropdownMenu.Root>
 
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+
+            {/* Links - Critical for Content */}
+            <Button
+                onClick={() => setShowLinkDialog(true)}
+                isActive={editor.isActive('link')}
+                title="Insert/Edit Link (Ctrl+K)"
+            >
+                <LinkIcon className="h-4 w-4" />
+            </Button>
+
+            <Button
+                onClick={removeLink}
+                disabled={!editor.isActive('link')}
+                title="Remove Link"
+            >
+                <Unlink className="h-4 w-4" />
+            </Button>
+
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+
+            {/* Media - Image */}
+            <Button
+                onClick={addImage}
+                title="Insert Image"
+            >
+                <ImageIcon className="h-4 w-4" />
+            </Button>
+
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+
+            {/* Code Blocks */}
+            <Button
+                onClick={() => editor.chain().focus().toggleCode().run()}
+                isActive={editor.isActive('code')}
+                title="Inline Code"
+            >
+                <Code className="h-4 w-4" />
+            </Button>
+
+            <Button
+                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                isActive={editor.isActive('codeBlock')}
+                title="Code Block"
+            >
+                <Code2 className="h-4 w-4" />
+            </Button>
+
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+
+            {/* Quote */}
             <Button
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
                 isActive={editor.isActive('blockquote')}
@@ -604,48 +540,7 @@ const MenuBar = ({ editor }) => {
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
-            <div className="relative inline-flex items-center">
-                <Button
-                    onClick={() => editor.chain().focus().toggleHighlight({ color: highlightColor }).run()}
-                    isActive={editor.isActive('highlight')}
-                    title="Highlight"
-                >
-                    <Highlighter className="h-4 w-4" />
-                </Button>
-                <input
-                    type="color"
-                    value={highlightColor}
-                    onChange={(e) => setHighlightColor(e.target.value)}
-                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[var(--border-secondary)] cursor-pointer"
-                    title="Highlight Color"
-                />
-            </div>
-
-            <Button
-                onClick={() => editor.chain().focus().toggleSubscript().run()}
-                isActive={editor.isActive('subscript')}
-                title="Subscript"
-            >
-                <SubscriptIcon className="h-4 w-4" />
-            </Button>
-
-            <Button
-                onClick={() => editor.chain().focus().toggleSuperscript().run()}
-                isActive={editor.isActive('superscript')}
-                title="Superscript"
-            >
-                <SuperscriptIcon className="h-4 w-4" />
-            </Button>
-
-            <Button
-                onClick={() => editor.chain().focus().setHorizontalRule().run()}
-                title="Horizontal Rule"
-            >
-                <MinusIcon className="h-4 w-4" />
-            </Button>
-
-            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
-
+            {/* Table */}
             <Button
                 onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
                 title="Insert Table (3x3)"
@@ -737,31 +632,139 @@ const MenuBar = ({ editor }) => {
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
+            {/* Additional Formatting */}
+            <div className="relative inline-flex items-center">
+                <Button
+                    onClick={() => editor.chain().focus().toggleHighlight({ color: highlightColor }).run()}
+                    isActive={editor.isActive('highlight')}
+                    title="Highlight Text"
+                >
+                    <Highlighter className="h-4 w-4" />
+                </Button>
+                <input
+                    type="color"
+                    value={highlightColor}
+                    onChange={(e) => setHighlightColor(e.target.value)}
+                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[var(--border-secondary)] cursor-pointer"
+                    title="Highlight Color"
+                />
+            </div>
+
             <Button
-                onClick={addLink}
-                isActive={editor.isActive('link')}
-                title="Add Link"
+                onClick={() => editor.chain().focus().toggleSubscript().run()}
+                isActive={editor.isActive('subscript')}
+                title="Subscript"
             >
-                <LinkIcon className="h-4 w-4" />
+                <SubscriptIcon className="h-4 w-4" />
             </Button>
 
             <Button
-                onClick={removeLink}
-                disabled={!editor.isActive('link')}
-                title="Remove Link"
+                onClick={() => editor.chain().focus().toggleSuperscript().run()}
+                isActive={editor.isActive('superscript')}
+                title="Superscript"
             >
-                <Unlink className="h-4 w-4" />
+                <SuperscriptIcon className="h-4 w-4" />
+            </Button>
+
+            <Button
+                onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                title="Horizontal Rule"
+            >
+                <MinusIcon className="h-4 w-4" />
             </Button>
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
-            <Button
-                onClick={addImage}
-                title="Insert Image"
-            >
-                <ImageIcon className="h-4 w-4" />
-            </Button>
+            {/* Advanced Styling */}
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                    <button
+                        type="button"
+                        className="p-2 px-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1"
+                        title="Font Family"
+                    >
+                        <Type className="h-4 w-4" />
+                        <ChevronDown className="h-3 w-3" />
+                    </button>
+                </DropdownMenu.Trigger>
 
+                <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                        className="min-w-[180px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50 max-h-[300px] overflow-y-auto"
+                        sideOffset={5}
+                    >
+                        {fontFamilies.map((font) => (
+                            <DropdownMenu.Item
+                                key={font}
+                                className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                                onSelect={() => {
+                                    editor.chain().focus().setFontFamily(font).run();
+                                    setFontFamily(font);
+                                }}
+                                style={{ fontFamily: font }}
+                            >
+                                {font}
+                            </DropdownMenu.Item>
+                        ))}
+                    </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                    <button
+                        type="button"
+                        className="p-2 px-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1 text-xs font-medium"
+                        title="Font Size"
+                    >
+                        {fontSize}
+                        <ChevronDown className="h-3 w-3" />
+                    </button>
+                </DropdownMenu.Trigger>
+
+                <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                        className="min-w-[120px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50 max-h-[300px] overflow-y-auto"
+                        sideOffset={5}
+                    >
+                        {fontSizes.map((size) => (
+                            <DropdownMenu.Item
+                                key={size}
+                                className="flex items-center justify-center px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                                onSelect={() => {
+                                    editor.chain().focus().setMark('textStyle', { fontSize: size }).run();
+                                    setFontSize(size);
+                                }}
+                            >
+                                {size}
+                            </DropdownMenu.Item>
+                        ))}
+                    </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+
+            <div className="relative inline-flex items-center">
+                <Button
+                    onClick={() => editor.chain().focus().setColor(textColor).run()}
+                    title="Text Color"
+                >
+                    <Palette className="h-4 w-4" />
+                </Button>
+                <input
+                    type="color"
+                    value={textColor}
+                    onChange={(e) => {
+                        setTextColor(e.target.value);
+                        editor.chain().focus().setColor(e.target.value).run();
+                    }}
+                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[var(--border-secondary)] cursor-pointer"
+                    title="Choose Text Color"
+                />
+            </div>
+
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+
+            {/* HTML Block */}
             <Button
                 onClick={addHtmlBlock}
                 title="Insert HTML Block"
@@ -769,161 +772,12 @@ const MenuBar = ({ editor }) => {
                 <FileCode className="h-4 w-4" />
             </Button>
 
-            <div className="flex items-center space-x-1 px-2 py-1 bg-[var(--bg-surface)] rounded-lg text-xs ml-2">
-                <input
-                    type="checkbox"
-                    id="linkFollow"
-                    checked={linkFollow}
-                    onChange={(e) => setLinkFollow(e.target.checked)}
-                    className="w-3 h-3 accent-[var(--color-primary)]"
-                />
-                <label htmlFor="linkFollow" className="text-[var(--text-muted)]">
-                    Follow
-                </label>
-            </div>
-
-            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
-
-            <Button
-                onClick={() => editor.chain().focus().undo().run()}
-                title="Undo"
-            >
-                <Undo className="h-4 w-4" />
-            </Button>
-
-            <Button
-                onClick={() => editor.chain().focus().redo().run()}
-                title="Redo"
-            >
-                <Redo className="h-4 w-4" />
-            </Button>
-
-            {/* Image Upload Dialog */}
-            {showImageDialog && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-                    <div className="bg-[var(--bg-elevated)] rounded-2xl max-w-lg w-full shadow-2xl border border-[var(--border-primary)]">
-                        <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <div className="bg-white/20 p-2 rounded-lg">
-                                        <ImageIcon className="h-5 w-5 text-white" />
-                                    </div>
-                                    <h3 className="text-xl font-semibold text-white">Insert Image</h3>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        setShowImageDialog(false);
-                                        setImageUrl('');
-                                        setImageAlt('');
-                                    }}
-                                    className="text-white/80 hover:text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="p-6 space-y-5">
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-[var(--text-primary)]">Choose Image *</label>
-                                <div className="relative">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                        disabled={isImageUploading}
-                                        className="hidden"
-                                        id="image-upload"
-                                    />
-                                    <label
-                                        htmlFor="image-upload"
-                                        className="flex items-center justify-center w-full p-6 border-2 border-dashed border-[var(--border-secondary)] rounded-xl cursor-pointer hover:border-green-500 hover:bg-green-500/10 transition-all group"
-                                    >
-                                        <div className="text-center">
-                                            {isImageUploading ? (
-                                                <div className="flex items-center space-x-2">
-                                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
-                                                    <span className="text-green-500 font-medium">Uploading...</span>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <Upload className="h-8 w-8 text-[var(--text-muted)] group-hover:text-green-500 mx-auto mb-2" />
-                                                    <p className="text-sm text-[var(--text-secondary)]">Click to upload or drag and drop</p>
-                                                    <p className="text-xs text-[var(--text-muted)] mt-1">PNG, JPG, GIF up to 5MB</p>
-                                                </>
-                                            )}
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className="relative">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-[var(--border-secondary)]" />
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-2 bg-[var(--bg-elevated)] text-[var(--text-muted)]">or enter URL</span>
-                                </div>
-                            </div>
-
-                            <input
-                                type="url"
-                                value={imageUrl}
-                                onChange={(e) => setImageUrl(e.target.value)}
-                                placeholder="https://example.com/image.jpg"
-                                className="w-full px-4 py-3 bg-[var(--bg-surface)] border-2 border-[var(--border-secondary)] rounded-xl focus:border-green-500 transition-all outline-none text-[var(--text-primary)]"
-                            />
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-[var(--text-primary)]">Alt Text (Accessibility) *</label>
-                                <input
-                                    type="text"
-                                    value={imageAlt}
-                                    onChange={(e) => setImageAlt(e.target.value)}
-                                    placeholder="Describe the image"
-                                    className="w-full px-4 py-3 bg-[var(--bg-surface)] border-2 border-[var(--border-secondary)] rounded-xl focus:border-green-500 transition-all outline-none text-[var(--text-primary)]"
-                                />
-                            </div>
-
-                            {imageUrl && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-[var(--text-primary)]">Preview</label>
-                                    <div className="border-2 border-[var(--border-secondary)] rounded-xl p-4">
-                                        <img
-                                            src={imageUrl}
-                                            alt={imageAlt || 'Preview'}
-                                            className="max-w-full h-auto rounded-lg"
-                                            onError={(e) => {
-                                                e.target.style.display = 'none';
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="px-6 py-4 bg-[var(--bg-surface)] rounded-b-2xl border-t border-[var(--border-secondary)] flex justify-end space-x-3">
-                            <button
-                                onClick={() => {
-                                    setShowImageDialog(false);
-                                    setImageUrl('');
-                                    setImageAlt('');
-                                }}
-                                className="px-5 py-2.5 text-[var(--text-secondary)] bg-[var(--bg-elevated)] border-2 border-[var(--border-secondary)] rounded-lg hover:bg-[var(--bg-base)] transition-all font-medium"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={insertImage}
-                                disabled={!imageUrl || !imageAlt || isImageUploading}
-                                className="px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg transition-all font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Insert Image
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Image Dialog */}
+            <ImageDialog
+                isOpen={showImageDialog}
+                onClose={() => setShowImageDialog(false)}
+                onInsert={handleImageInsert}
+            />
 
             {/* HTML Block Dialog */}
             {showHtmlDialog && (
@@ -992,6 +846,14 @@ const MenuBar = ({ editor }) => {
                     </div>
                 </div>
             )}
+
+            {/* Link Dialog */}
+            <LinkDialog
+                isOpen={showLinkDialog}
+                onClose={() => setShowLinkDialog(false)}
+                onInsert={handleLinkInsert}
+                editor={editor}
+            />
         </div>
     );
 };
