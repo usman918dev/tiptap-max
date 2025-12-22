@@ -4,7 +4,6 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
@@ -21,6 +20,8 @@ import TextStyle from '@tiptap/extension-text-style';
 import FontFamily from '@tiptap/extension-font-family';
 import { common, createLowlight } from 'lowlight';
 import { Node } from '@tiptap/core';
+import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
+import CustomImage from './extensions/CustomImage';
 import {
     Bold,
     Italic,
@@ -55,13 +56,18 @@ import {
     FileCode,
     X,
     Type,
-    Palette
+    Palette,
+    GripVertical
 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import LinkDialog from './LinkDialog';
-import ImageDialog from './ImageDialog';
+import LinkDialog from './dialog/LinkDialog';
+import ImageDialog from './dialog/ImageDialog';
+import HtmlDialog from './dialog/HtmlDialog';
+import TableControls from './table/TableControls';
+import Button from '../Button';
+import { useDragHandle, dragHandleConfig } from './DragHandle';
 
 const lowlight = createLowlight(common);
 
@@ -188,15 +194,28 @@ const MenuBar = ({ editor }) => {
         setShowHtmlDialog(true);
     }, [editor]);
 
-    const handleImageInsert = useCallback(({ url, alt }) => {
+    const handleImageInsert = useCallback(({ url, alt, size, align, textWrap }) => {
         if (!editor) return;
+
+        // Convert size to width value
+        const sizeToWidth = {
+            small: 300,
+            medium: 500,
+            large: 700,
+            full: 800
+        };
+
+        const width = sizeToWidth[size] || 500;
+        const alignValue = align || 'center';
 
         editor
             .chain()
             .focus()
-            .setImage({
+            .setCustomImage({
                 src: url,
-                alt: alt,
+                alt: alt || '',
+                width: width,
+                align: alignValue,
             })
             .run();
     }, [editor]);
@@ -250,21 +269,7 @@ const MenuBar = ({ editor }) => {
         return null;
     }
 
-    const Button = ({ onClick, isActive, children, title, disabled = false }) => (
-        <button
-            type="button"
-            onClick={onClick}
-            onMouseDown={(e) => e.preventDefault()}
-            disabled={disabled}
-            className={`p-2 rounded-lg transition-all duration-200 ${isActive
-                    ? 'bg-[var(--color-primary)] text-white shadow-lg'
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)]'
-                } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
-            title={title}
-        >
-            {children}
-        </button>
-    );
+   
 
     return (
         <div className="editor-toolbar flex flex-wrap gap-1 items-center">
@@ -541,94 +546,7 @@ const MenuBar = ({ editor }) => {
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
             {/* Table */}
-            <Button
-                onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-                title="Insert Table (3x3)"
-            >
-                <TableIcon className="h-4 w-4" />
-            </Button>
-
-            {isInTable && (
-                <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild>
-                        <button
-                            type="button"
-                            className="p-2 rounded-lg hover:bg-[var(--color-primary)]/20 transition-colors text-[var(--text-secondary)] flex items-center gap-1"
-                            title="Table Options"
-                        >
-                            <span className="text-xs font-medium">Table</span>
-                            <ChevronDown className="h-3 w-3" />
-                        </button>
-                    </DropdownMenu.Trigger>
-
-                    <DropdownMenu.Portal>
-                        <DropdownMenu.Content
-                            className="min-w-[220px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50"
-                            sideOffset={5}
-                        >
-                            <DropdownMenu.Item
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                                onSelect={() => editor.chain().focus().addRowBefore().run()}
-                            >
-                                <Plus className="h-4 w-4" />
-                                Add Row Before
-                            </DropdownMenu.Item>
-
-                            <DropdownMenu.Item
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                                onSelect={() => editor.chain().focus().addRowAfter().run()}
-                            >
-                                <Plus className="h-4 w-4" />
-                                Add Row After
-                            </DropdownMenu.Item>
-
-                            <DropdownMenu.Item
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 rounded-lg hover:bg-red-500/10 cursor-pointer outline-none"
-                                onSelect={() => editor.chain().focus().deleteRow().run()}
-                            >
-                                <Minus className="h-4 w-4" />
-                                Delete Row
-                            </DropdownMenu.Item>
-
-                            <DropdownMenu.Separator className="h-px bg-[var(--border-secondary)] my-1" />
-
-                            <DropdownMenu.Item
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                                onSelect={() => editor.chain().focus().addColumnBefore().run()}
-                            >
-                                <Plus className="h-4 w-4" />
-                                Add Column Before
-                            </DropdownMenu.Item>
-
-                            <DropdownMenu.Item
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                                onSelect={() => editor.chain().focus().addColumnAfter().run()}
-                            >
-                                <Plus className="h-4 w-4" />
-                                Add Column After
-                            </DropdownMenu.Item>
-
-                            <DropdownMenu.Item
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 rounded-lg hover:bg-red-500/10 cursor-pointer outline-none"
-                                onSelect={() => editor.chain().focus().deleteColumn().run()}
-                            >
-                                <Minus className="h-4 w-4" />
-                                Delete Column
-                            </DropdownMenu.Item>
-
-                            <DropdownMenu.Separator className="h-px bg-[var(--border-secondary)] my-1" />
-
-                            <DropdownMenu.Item
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 rounded-lg hover:bg-red-500/10 cursor-pointer outline-none"
-                                onSelect={() => editor.chain().focus().deleteTable().run()}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                                Delete Table
-                            </DropdownMenu.Item>
-                        </DropdownMenu.Content>
-                    </DropdownMenu.Portal>
-                </DropdownMenu.Root>
-            )}
+            <TableControls editor={editor} isInTable={isInTable} />
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
@@ -780,72 +698,13 @@ const MenuBar = ({ editor }) => {
             />
 
             {/* HTML Block Dialog */}
-            {showHtmlDialog && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-                    <div className="bg-[var(--bg-elevated)] rounded-2xl max-w-2xl w-full shadow-2xl border border-[var(--border-primary)]">
-                        <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 rounded-t-2xl">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <div className="bg-white/20 p-2 rounded-lg">
-                                        <FileCode className="h-5 w-5 text-white" />
-                                    </div>
-                                    <h3 className="text-xl font-semibold text-white">Insert HTML Block</h3>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        setShowHtmlDialog(false);
-                                        setHtmlContent('');
-                                    }}
-                                    className="text-white/80 hover:text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="p-6 space-y-5">
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-[var(--text-primary)]">HTML Content *</label>
-                                <textarea
-                                    value={htmlContent}
-                                    onChange={(e) => setHtmlContent(e.target.value)}
-                                    placeholder="<div>Your HTML content here...</div>"
-                                    rows={10}
-                                    className="w-full px-4 py-3 bg-[var(--bg-surface)] border-2 border-[var(--border-secondary)] rounded-xl focus:border-purple-500 transition-all outline-none text-[var(--text-primary)] font-mono text-sm"
-                                />
-                            </div>
-
-                            {htmlContent && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-[var(--text-primary)]">Preview</label>
-                                    <div className="border-2 border-purple-500/30 rounded-xl p-4 bg-purple-500/5">
-                                        <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="px-6 py-4 bg-[var(--bg-surface)] rounded-b-2xl border-t border-[var(--border-secondary)] flex justify-end space-x-3">
-                            <button
-                                onClick={() => {
-                                    setShowHtmlDialog(false);
-                                    setHtmlContent('');
-                                }}
-                                className="px-5 py-2.5 text-[var(--text-secondary)] bg-[var(--bg-elevated)] border-2 border-[var(--border-secondary)] rounded-lg hover:bg-[var(--bg-base)] transition-all font-medium"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={insertHtmlBlock}
-                                disabled={!htmlContent}
-                                className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg transition-all font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Insert HTML
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <HtmlDialog
+                isOpen={showHtmlDialog}
+                onClose={() => setShowHtmlDialog(false)}
+                onInsert={insertHtmlBlock}
+                htmlContent={htmlContent}
+                setHtmlContent={setHtmlContent}
+            />
 
             {/* Link Dialog */}
             <LinkDialog
@@ -877,11 +736,7 @@ export default function BlogEditor({ content, onChange, placeholder = "Start wri
             Subscript,
             Superscript,
             HorizontalRule,
-            Image.configure({
-                HTMLAttributes: {
-                    class: 'max-w-full h-auto rounded-lg shadow-md my-4',
-                },
-            }),
+            CustomImage,
             Link.configure({
                 openOnClick: false,
                 HTMLAttributes: {
@@ -897,7 +752,7 @@ export default function BlogEditor({ content, onChange, placeholder = "Start wri
             Table.configure({
                 resizable: true,
                 HTMLAttributes: {
-                    class: 'border-collapse table-auto w-full my-4',
+                    class: 'border-collapse table-auto w-full',
                 },
             }),
             TableRow,
@@ -911,6 +766,7 @@ export default function BlogEditor({ content, onChange, placeholder = "Start wri
                     class: 'border border-gray-300 px-4 py-2',
                 },
             }),
+            GlobalDragHandle.configure(dragHandleConfig),
             HtmlBlock,
         ],
         content: content || '',
@@ -926,6 +782,9 @@ export default function BlogEditor({ content, onChange, placeholder = "Start wri
             editor.commands.setContent(content || '');
         }
     }, [content, editor]);
+
+    // Initialize drag handle positioning
+    useDragHandle(editor);
 
     return (
         <div className="editor-container">

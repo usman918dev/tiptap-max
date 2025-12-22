@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to avoid SSR issues with Tiptap
-const BlogEditor = dynamic(() => import('./BlogEditor'), {
+const Editor = dynamic(() => import('./Editor'), {
     ssr: false,
     loading: () => (
         <div className="editor-container animate-pulse">
@@ -92,7 +92,7 @@ export default function TiptapMaxEditor() {
 
     return (
         <div className="space-y-4">
-            <BlogEditor
+            <Editor
                 content={content}
                 onChange={handleContentChange}
                 placeholder="Start writing something amazing..."
