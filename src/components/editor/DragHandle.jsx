@@ -52,5 +52,6 @@ export function useDragHandle(editor) {
 export const dragHandleConfig = {
     dragHandleWidth: 24,
     scrollTreshold: 100,
+    // Exclude table cell elements from drag handle (the whole table can still be dragged)
     excludedTags: ['li', 'td', 'th', 'tr', 'tbody', 'thead'],
 };

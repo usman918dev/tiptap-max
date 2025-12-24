@@ -427,35 +427,35 @@ p {
 }
 
 /* Hover state for blocks */
-.ProseMirror > p,
-.ProseMirror > h1,
-.ProseMirror > h2,
-.ProseMirror > h3,
-.ProseMirror > h4,
-.ProseMirror > h5,
-.ProseMirror > h6,
-.ProseMirror > ul,
-.ProseMirror > ol,
-.ProseMirror > blockquote,
-.ProseMirror > pre,
-.ProseMirror > .tableWrapper {
+.ProseMirror>p,
+.ProseMirror>h1,
+.ProseMirror>h2,
+.ProseMirror>h3,
+.ProseMirror>h4,
+.ProseMirror>h5,
+.ProseMirror>h6,
+.ProseMirror>ul,
+.ProseMirror>ol,
+.ProseMirror>blockquote,
+.ProseMirror>pre,
+.ProseMirror>.tableWrapper {
   position: relative;
   transition: background-color 0.15s ease;
   border-radius: 4px;
 }
 
-.ProseMirror > p:hover,
-.ProseMirror > h1:hover,
-.ProseMirror > h2:hover,
-.ProseMirror > h3:hover,
-.ProseMirror > h4:hover,
-.ProseMirror > h5:hover,
-.ProseMirror > h6:hover,
-.ProseMirror > ul:hover,
-.ProseMirror > ol:hover,
-.ProseMirror > blockquote:hover,
-.ProseMirror > pre:hover,
-.ProseMirror > .tableWrapper:hover {
+.ProseMirror>p:hover,
+.ProseMirror>h1:hover,
+.ProseMirror>h2:hover,
+.ProseMirror>h3:hover,
+.ProseMirror>h4:hover,
+.ProseMirror>h5:hover,
+.ProseMirror>h6:hover,
+.ProseMirror>ul:hover,
+.ProseMirror>ol:hover,
+.ProseMirror>blockquote:hover,
+.ProseMirror>pre:hover,
+.ProseMirror>.tableWrapper:hover {
   background-color: rgba(139, 92, 246, 0.03);
 }
 
@@ -952,4 +952,308 @@ p {
 ::selection {
   background: rgba(139, 92, 246, 0.3);
   color: var(--text-primary);
+}
+
+/* ============================================
+   TABLE CELL STYLES
+   ============================================ */
+
+/* Table cell hover effect */
+.ProseMirror td:hover,
+.ProseMirror th:hover {
+  background-color: var(--bg-surface) !important;
+}
+
+/* Table styling improvements */
+.ProseMirror table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.ProseMirror th {
+  background: var(--bg-surface);
+  font-weight: 600;
+  text-align: left;
+  border: 1px solid var(--border-secondary);
+  padding: 0.75rem 1rem;
+}
+
+.ProseMirror td {
+  border: 1px solid var(--border-secondary);
+  padding: 0.75rem 1rem;
+  min-width: 100px;
+  vertical-align: top;
+}
+
+/* Cell background colors support */
+.ProseMirror td[data-background] {
+  background-color: var(--cell-bg, transparent);
+}
+
+/* Selected cell highlight */
+.ProseMirror .selectedCell {
+  background-color: rgba(139, 92, 246, 0.15) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* ============================================
+   TABLE CELL BUBBLE MENU
+   ============================================ */
+
+.table-cell-bubble-menu {
+  z-index: 50;
+}
+
+.cell-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cell-action-btn:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.cell-action-btn.text-red-500:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Cell menu button (3-dot icon in each cell) */
+.cell-menu-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-secondary);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+  z-index: 10;
+}
+
+.ProseMirror td:hover .cell-menu-btn,
+.ProseMirror th:hover .cell-menu-btn,
+.cell-menu-btn:hover {
+  opacity: 1;
+}
+
+.cell-menu-btn:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* Dropdown menu items */
+.cell-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.cell-menu-item:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.cell-menu-item.text-red-500 {
+  color: #ef4444;
+}
+
+.cell-menu-item.text-red-500:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Bubble menu action buttons */
+.bubble-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bubble-action-btn:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.bubble-action-btn.bubble-action-danger {
+  color: var(--text-secondary);
+}
+
+.bubble-action-btn.bubble-action-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* ============================================
+   LIST STYLES (Bullet, Ordered, Task)
+   ============================================ */
+
+/* Bullet List */
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.ProseMirror ul li {
+  margin: 0.25rem 0;
+  padding-left: 0.25rem;
+}
+
+.ProseMirror ul ul {
+  list-style-type: circle;
+  margin: 0.25rem 0;
+}
+
+.ProseMirror ul ul ul {
+  list-style-type: square;
+}
+
+/* Ordered List */
+.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.ProseMirror ol li {
+  margin: 0.25rem 0;
+  padding-left: 0.25rem;
+}
+
+.ProseMirror ol ol {
+  list-style-type: lower-alpha;
+  margin: 0.25rem 0;
+}
+
+.ProseMirror ol ol ol {
+  list-style-type: lower-roman;
+}
+
+/* Task List (Todo) */
+.ProseMirror ul[data-type="taskList"],
+.ProseMirror .task-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.75rem 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li,
+.ProseMirror .task-list .task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  padding-left: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li>label,
+.ProseMirror .task-list .task-item>label {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.ProseMirror ul[data-type="taskList"] li>label input[type="checkbox"],
+.ProseMirror .task-list .task-item>label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-secondary);
+  border-radius: 4px;
+  background: var(--bg-surface);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.ProseMirror ul[data-type="taskList"] li>label input[type="checkbox"]:checked,
+.ProseMirror .task-list .task-item>label input[type="checkbox"]:checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.ProseMirror ul[data-type="taskList"] li>label input[type="checkbox"]:checked::after,
+.ProseMirror .task-list .task-item>label input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.ProseMirror ul[data-type="taskList"] li>label input[type="checkbox"]:hover,
+.ProseMirror .task-list .task-item>label input[type="checkbox"]:hover {
+  border-color: var(--color-primary);
+}
+
+.ProseMirror ul[data-type="taskList"] li>div,
+.ProseMirror .task-list .task-item>div {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Checked task item text style */
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"]>div,
+.ProseMirror .task-list .task-item[data-checked="true"]>div {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+/* Nested task lists */
+.ProseMirror ul[data-type="taskList"] ul[data-type="taskList"],
+.ProseMirror .task-list .task-list {
+  margin-left: 1.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }

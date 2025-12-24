@@ -8,7 +8,7 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
-import { TableCell } from '@tiptap/extension-table-cell';
+import CustomTableCell from './extensions/CustomTableCell';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import Typography from '@tiptap/extension-typography';
@@ -66,6 +66,9 @@ import LinkDialog from './dialog/LinkDialog';
 import ImageDialog from './dialog/ImageDialog';
 import HtmlDialog from './dialog/HtmlDialog';
 import TableControls from './table/TableControls';
+import TableCellMenu from './table/TableCellMenu';
+import EmojiPicker from './EmojiPicker';
+import ListControls from './ListControls';
 import Button from '../Button';
 import { useDragHandle, dragHandleConfig } from './DragHandle';
 
@@ -269,7 +272,7 @@ const MenuBar = ({ editor }) => {
         return null;
     }
 
-   
+
 
     return (
         <div className="editor-toolbar flex flex-wrap gap-1 items-center">
@@ -322,11 +325,10 @@ const MenuBar = ({ editor }) => {
                 <DropdownMenu.Trigger asChild>
                     <button
                         type="button"
-                        className={`p-2 rounded-lg transition-all duration-200 flex items-center gap-1 ${
-                            editor.isActive('heading')
-                                ? 'bg-[var(--color-primary)] text-white shadow-lg'
-                                : 'text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)]'
-                        }`}
+                        className={`p-2 rounded-lg transition-all duration-200 flex items-center gap-1 ${editor.isActive('heading')
+                            ? 'bg-[var(--color-primary)] text-white shadow-lg'
+                            : 'text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)]'
+                            }`}
                         title="Headings"
                     >
                         {editor.isActive('heading', { level: 1 }) ? (
@@ -440,49 +442,7 @@ const MenuBar = ({ editor }) => {
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
             {/* Lists Dropdown */}
-            <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                    <button
-                        type="button"
-                        className={`p-2 rounded-lg transition-all duration-200 flex items-center gap-1 ${
-                            editor.isActive('bulletList') || editor.isActive('orderedList')
-                                ? 'bg-[var(--color-primary)] text-white shadow-lg'
-                                : 'text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)]'
-                        }`}
-                        title="Lists"
-                    >
-                        {editor.isActive('orderedList') ? (
-                            <ListOrdered className="h-4 w-4" />
-                        ) : (
-                            <List className="h-4 w-4" />
-                        )}
-                        <ChevronDown className="h-3 w-3" />
-                    </button>
-                </DropdownMenu.Trigger>
-
-                <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                        className="min-w-[160px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50"
-                        sideOffset={5}
-                    >
-                        <DropdownMenu.Item
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                            onSelect={() => editor.chain().focus().toggleBulletList().run()}
-                        >
-                            <List className="h-4 w-4" />
-                            Bullet List
-                        </DropdownMenu.Item>
-
-                        <DropdownMenu.Item
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                            onSelect={() => editor.chain().focus().toggleOrderedList().run()}
-                        >
-                            <ListOrdered className="h-4 w-4" />
-                            Ordered List
-                        </DropdownMenu.Item>
-                    </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-            </DropdownMenu.Root>
+            <ListControls editor={editor} />
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
@@ -690,6 +650,9 @@ const MenuBar = ({ editor }) => {
                 <FileCode className="h-4 w-4" />
             </Button>
 
+            {/* Emoji Picker */}
+            <EmojiPicker editor={editor} />
+
             {/* Image Dialog */}
             <ImageDialog
                 isOpen={showImageDialog}
@@ -751,6 +714,8 @@ export default function BlogEditor({ content, onChange, placeholder = "Start wri
             }),
             Table.configure({
                 resizable: true,
+                // Allow table to be selected as a single node for proper drag/drop behavior
+                allowTableNodeSelection: true,
                 HTMLAttributes: {
                     class: 'border-collapse table-auto w-full',
                 },
@@ -761,7 +726,7 @@ export default function BlogEditor({ content, onChange, placeholder = "Start wri
                     class: 'border border-gray-300 px-4 py-2 bg-gray-100 font-bold text-left',
                 },
             }),
-            TableCell.configure({
+            CustomTableCell.configure({
                 HTMLAttributes: {
                     class: 'border border-gray-300 px-4 py-2',
                 },
@@ -794,6 +759,7 @@ export default function BlogEditor({ content, onChange, placeholder = "Start wri
                 className="min-h-[300px]"
                 placeholder={placeholder}
             />
+            {editor && <TableCellMenu editor={editor} />}
         </div>
     );
 }
