@@ -1,6 +1,6 @@
 {
   "name": "tiptap-max",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Tiptap-Max: Advanced Rich Text Editor",
   "private": true,
   "scripts": {
