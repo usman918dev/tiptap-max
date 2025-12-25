@@ -1,27 +1,6 @@
 'use client';
 
 import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
-import Link from '@tiptap/extension-link';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { Table } from '@tiptap/extension-table';
-import { TableRow } from '@tiptap/extension-table-row';
-import { TableHeader } from '@tiptap/extension-table-header';
-import CustomTableCell from './extensions/CustomTableCell';
-import TextAlign from '@tiptap/extension-text-align';
-import Highlight from '@tiptap/extension-highlight';
-import Typography from '@tiptap/extension-typography';
-import HorizontalRule from '@tiptap/extension-horizontal-rule';
-import Subscript from '@tiptap/extension-subscript';
-import Superscript from '@tiptap/extension-superscript';
-import { Color } from '@tiptap/extension-color';
-import TextStyle from '@tiptap/extension-text-style';
-import FontFamily from '@tiptap/extension-font-family';
-import { common, createLowlight } from 'lowlight';
-import { Node } from '@tiptap/core';
-import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
-import CustomImage from './extensions/CustomImage';
 import {
     Bold,
     Italic,
@@ -59,7 +38,7 @@ import {
     Palette,
     GripVertical
 } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import LinkDialog from './dialog/LinkDialog';
@@ -70,72 +49,10 @@ import TableCellMenu from './table/TableCellMenu';
 import EmojiPicker from './EmojiPicker';
 import ListControls from './ListControls';
 import Button from '../Button';
-import { useDragHandle, dragHandleConfig } from './DragHandle';
+import { useDragHandle } from './DragHandle';
+import { buildExtensions, isToolbarFeatureAvailable } from './config/extensionBuilder';
 
-const lowlight = createLowlight(common);
-
-// Custom HTML Block Extension
-const HtmlBlock = Node.create({
-    name: 'htmlBlock',
-    group: 'block',
-    atom: true,
-
-    addAttributes() {
-        return {
-            htmlContent: { default: '' },
-            dataLevel: { default: null },
-        };
-    },
-
-    parseHTML() {
-        return [
-            {
-                tag: 'div[data-html-block]',
-                getAttrs: (dom) => ({
-                    htmlContent: dom.innerHTML,
-                    dataLevel: dom.getAttribute('data-level'),
-                }),
-            },
-        ];
-    },
-
-    renderHTML({ node }) {
-        return [
-            'div',
-            {
-                'data-html-block': '',
-                'data-level': node.attrs.dataLevel,
-                class: 'html-block-content my-4',
-            },
-        ];
-    },
-
-    addNodeView() {
-        return ({ node }) => {
-            const dom = document.createElement('div');
-            dom.className = 'html-block-content my-4';
-            dom.setAttribute('data-html-block', '');
-            dom.setAttribute('data-level', node.attrs.dataLevel || '1');
-            dom.innerHTML = node.attrs.htmlContent;
-            return { dom };
-        };
-    },
-
-    addCommands() {
-        return {
-            setHtmlBlock:
-                (attributes) =>
-                    ({ commands }) => {
-                        return commands.insertContent({
-                            type: this.name,
-                            attrs: attributes,
-                        });
-                    },
-        };
-    },
-});
-
-const MenuBar = ({ editor }) => {
+const MenuBar = ({ editor, tier = 'pro' }) => {
     const [showImageDialog, setShowImageDialog] = useState(false);
     const [showHtmlDialog, setShowHtmlDialog] = useState(false);
     const [showLinkDialog, setShowLinkDialog] = useState(false);
@@ -378,66 +295,68 @@ const MenuBar = ({ editor }) => {
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
-            {/* Alignment Dropdown */}
-            <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                    <button
-                        type="button"
-                        className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1"
-                        title="Text Alignment"
-                    >
-                        {editor.isActive({ textAlign: 'center' }) ? (
-                            <AlignCenter className="h-4 w-4" />
-                        ) : editor.isActive({ textAlign: 'right' }) ? (
-                            <AlignRight className="h-4 w-4" />
-                        ) : editor.isActive({ textAlign: 'justify' }) ? (
-                            <AlignJustify className="h-4 w-4" />
-                        ) : (
-                            <AlignLeft className="h-4 w-4" />
-                        )}
-                        <ChevronDown className="h-3 w-3" />
-                    </button>
-                </DropdownMenu.Trigger>
-
-                <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                        className="min-w-[160px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50"
-                        sideOffset={5}
-                    >
-                        <DropdownMenu.Item
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                            onSelect={() => editor.chain().focus().setTextAlign('left').run()}
+            {/* Alignment Dropdown - Enhanced+ */}
+            {isToolbarFeatureAvailable(tier, 'alignment') && (
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                        <button
+                            type="button"
+                            className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1"
+                            title="Text Alignment"
                         >
-                            <AlignLeft className="h-4 w-4" />
-                            Align Left
-                        </DropdownMenu.Item>
+                            {editor.isActive({ textAlign: 'center' }) ? (
+                                <AlignCenter className="h-4 w-4" />
+                            ) : editor.isActive({ textAlign: 'right' }) ? (
+                                <AlignRight className="h-4 w-4" />
+                            ) : editor.isActive({ textAlign: 'justify' }) ? (
+                                <AlignJustify className="h-4 w-4" />
+                            ) : (
+                                <AlignLeft className="h-4 w-4" />
+                            )}
+                            <ChevronDown className="h-3 w-3" />
+                        </button>
+                    </DropdownMenu.Trigger>
 
-                        <DropdownMenu.Item
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                            onSelect={() => editor.chain().focus().setTextAlign('center').run()}
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                            className="min-w-[160px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50"
+                            sideOffset={5}
                         >
-                            <AlignCenter className="h-4 w-4" />
-                            Align Center
-                        </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                                onSelect={() => editor.chain().focus().setTextAlign('left').run()}
+                            >
+                                <AlignLeft className="h-4 w-4" />
+                                Align Left
+                            </DropdownMenu.Item>
 
-                        <DropdownMenu.Item
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                            onSelect={() => editor.chain().focus().setTextAlign('right').run()}
-                        >
-                            <AlignRight className="h-4 w-4" />
-                            Align Right
-                        </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                                onSelect={() => editor.chain().focus().setTextAlign('center').run()}
+                            >
+                                <AlignCenter className="h-4 w-4" />
+                                Align Center
+                            </DropdownMenu.Item>
 
-                        <DropdownMenu.Item
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                            onSelect={() => editor.chain().focus().setTextAlign('justify').run()}
-                        >
-                            <AlignJustify className="h-4 w-4" />
-                            Justify
-                        </DropdownMenu.Item>
-                    </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-            </DropdownMenu.Root>
+                            <DropdownMenu.Item
+                                className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                                onSelect={() => editor.chain().focus().setTextAlign('right').run()}
+                            >
+                                <AlignRight className="h-4 w-4" />
+                                Align Right
+                            </DropdownMenu.Item>
+
+                            <DropdownMenu.Item
+                                className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                                onSelect={() => editor.chain().focus().setTextAlign('justify').run()}
+                            >
+                                <AlignJustify className="h-4 w-4" />
+                                Justify
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+            )}
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
@@ -463,34 +382,40 @@ const MenuBar = ({ editor }) => {
                 <Unlink className="h-4 w-4" />
             </Button>
 
-            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+            {/* Media - Image - Enhanced+ */}
+            {isToolbarFeatureAvailable(tier, 'image') && (
+                <>
+                    <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+                    <Button
+                        onClick={addImage}
+                        title="Insert Image"
+                    >
+                        <ImageIcon className="h-4 w-4" />
+                    </Button>
+                </>
+            )}
 
-            {/* Media - Image */}
-            <Button
-                onClick={addImage}
-                title="Insert Image"
-            >
-                <ImageIcon className="h-4 w-4" />
-            </Button>
+            {/* Code Blocks - Enhanced+ */}
+            {isToolbarFeatureAvailable(tier, 'code') && (
+                <>
+                    <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+                    <Button
+                        onClick={() => editor.chain().focus().toggleCode().run()}
+                        isActive={editor.isActive('code')}
+                        title="Inline Code"
+                    >
+                        <Code className="h-4 w-4" />
+                    </Button>
 
-            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
-
-            {/* Code Blocks */}
-            <Button
-                onClick={() => editor.chain().focus().toggleCode().run()}
-                isActive={editor.isActive('code')}
-                title="Inline Code"
-            >
-                <Code className="h-4 w-4" />
-            </Button>
-
-            <Button
-                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-                isActive={editor.isActive('codeBlock')}
-                title="Code Block"
-            >
-                <Code2 className="h-4 w-4" />
-            </Button>
+                    <Button
+                        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                        isActive={editor.isActive('codeBlock')}
+                        title="Code Block"
+                    >
+                        <Code2 className="h-4 w-4" />
+                    </Button>
+                </>
+            )}
 
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
 
@@ -503,155 +428,170 @@ const MenuBar = ({ editor }) => {
                 <Quote className="h-4 w-4" />
             </Button>
 
-            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+            {/* Table - Pro only */}
+            {isToolbarFeatureAvailable(tier, 'table') && (
+                <>
+                    <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+                    <TableControls editor={editor} isInTable={isInTable} />
+                </>
+            )}
 
-            {/* Table */}
-            <TableControls editor={editor} isInTable={isInTable} />
+            {/* Additional Formatting - Enhanced+ */}
+            {isToolbarFeatureAvailable(tier, 'highlight') && (
+                <>
+                    <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+                    <div className="relative inline-flex items-center">
+                        <Button
+                            onClick={() => editor.chain().focus().toggleHighlight({ color: highlightColor }).run()}
+                            isActive={editor.isActive('highlight')}
+                            title="Highlight Text"
+                        >
+                            <Highlighter className="h-4 w-4" />
+                        </Button>
+                        <input
+                            type="color"
+                            value={highlightColor}
+                            onChange={(e) => setHighlightColor(e.target.value)}
+                            className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[var(--border-secondary)] cursor-pointer"
+                            title="Highlight Color"
+                        />
+                    </div>
 
-            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
-
-            {/* Additional Formatting */}
-            <div className="relative inline-flex items-center">
-                <Button
-                    onClick={() => editor.chain().focus().toggleHighlight({ color: highlightColor }).run()}
-                    isActive={editor.isActive('highlight')}
-                    title="Highlight Text"
-                >
-                    <Highlighter className="h-4 w-4" />
-                </Button>
-                <input
-                    type="color"
-                    value={highlightColor}
-                    onChange={(e) => setHighlightColor(e.target.value)}
-                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[var(--border-secondary)] cursor-pointer"
-                    title="Highlight Color"
-                />
-            </div>
-
-            <Button
-                onClick={() => editor.chain().focus().toggleSubscript().run()}
-                isActive={editor.isActive('subscript')}
-                title="Subscript"
-            >
-                <SubscriptIcon className="h-4 w-4" />
-            </Button>
-
-            <Button
-                onClick={() => editor.chain().focus().toggleSuperscript().run()}
-                isActive={editor.isActive('superscript')}
-                title="Superscript"
-            >
-                <SuperscriptIcon className="h-4 w-4" />
-            </Button>
-
-            <Button
-                onClick={() => editor.chain().focus().setHorizontalRule().run()}
-                title="Horizontal Rule"
-            >
-                <MinusIcon className="h-4 w-4" />
-            </Button>
-
-            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
-
-            {/* Advanced Styling */}
-            <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                    <button
-                        type="button"
-                        className="p-2 px-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1"
-                        title="Font Family"
+                    <Button
+                        onClick={() => editor.chain().focus().toggleSubscript().run()}
+                        isActive={editor.isActive('subscript')}
+                        title="Subscript"
                     >
-                        <Type className="h-4 w-4" />
-                        <ChevronDown className="h-3 w-3" />
-                    </button>
-                </DropdownMenu.Trigger>
+                        <SubscriptIcon className="h-4 w-4" />
+                    </Button>
 
-                <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                        className="min-w-[180px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50 max-h-[300px] overflow-y-auto"
-                        sideOffset={5}
+                    <Button
+                        onClick={() => editor.chain().focus().toggleSuperscript().run()}
+                        isActive={editor.isActive('superscript')}
+                        title="Superscript"
                     >
-                        {fontFamilies.map((font) => (
-                            <DropdownMenu.Item
-                                key={font}
-                                className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                                onSelect={() => {
-                                    editor.chain().focus().setFontFamily(font).run();
-                                    setFontFamily(font);
-                                }}
-                                style={{ fontFamily: font }}
+                        <SuperscriptIcon className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                        title="Horizontal Rule"
+                    >
+                        <MinusIcon className="h-4 w-4" />
+                    </Button>
+                </>
+            )}
+
+            {/* Advanced Styling - Enhanced+ */}
+            {isToolbarFeatureAvailable(tier, 'fontFamily') && (
+                <>
+                    <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                            <button
+                                type="button"
+                                className="p-2 px-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1"
+                                title="Font Family"
                             >
-                                {font}
-                            </DropdownMenu.Item>
-                        ))}
-                    </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-            </DropdownMenu.Root>
+                                <Type className="h-4 w-4" />
+                                <ChevronDown className="h-3 w-3" />
+                            </button>
+                        </DropdownMenu.Trigger>
 
-            <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                    <button
-                        type="button"
-                        className="p-2 px-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1 text-xs font-medium"
-                        title="Font Size"
-                    >
-                        {fontSize}
-                        <ChevronDown className="h-3 w-3" />
-                    </button>
-                </DropdownMenu.Trigger>
-
-                <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                        className="min-w-[120px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50 max-h-[300px] overflow-y-auto"
-                        sideOffset={5}
-                    >
-                        {fontSizes.map((size) => (
-                            <DropdownMenu.Item
-                                key={size}
-                                className="flex items-center justify-center px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
-                                onSelect={() => {
-                                    editor.chain().focus().setMark('textStyle', { fontSize: size }).run();
-                                    setFontSize(size);
-                                }}
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                                className="min-w-[180px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50 max-h-[300px] overflow-y-auto"
+                                sideOffset={5}
                             >
-                                {size}
-                            </DropdownMenu.Item>
-                        ))}
-                    </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-            </DropdownMenu.Root>
+                                {fontFamilies.map((font) => (
+                                    <DropdownMenu.Item
+                                        key={font}
+                                        className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                                        onSelect={() => {
+                                            editor.chain().focus().setFontFamily(font).run();
+                                            setFontFamily(font);
+                                        }}
+                                        style={{ fontFamily: font }}
+                                    >
+                                        {font}
+                                    </DropdownMenu.Item>
+                                ))}
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
 
-            <div className="relative inline-flex items-center">
-                <Button
-                    onClick={() => editor.chain().focus().setColor(textColor).run()}
-                    title="Text Color"
-                >
-                    <Palette className="h-4 w-4" />
-                </Button>
-                <input
-                    type="color"
-                    value={textColor}
-                    onChange={(e) => {
-                        setTextColor(e.target.value);
-                        editor.chain().focus().setColor(e.target.value).run();
-                    }}
-                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[var(--border-secondary)] cursor-pointer"
-                    title="Choose Text Color"
-                />
-            </div>
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                            <button
+                                type="button"
+                                className="p-2 px-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20 hover:text-[var(--color-primary)] transition-all duration-200 flex items-center gap-1 text-xs font-medium"
+                                title="Font Size"
+                            >
+                                {fontSize}
+                                <ChevronDown className="h-3 w-3" />
+                            </button>
+                        </DropdownMenu.Trigger>
 
-            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                                className="min-w-[120px] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border-secondary)] p-1 z-50 max-h-[300px] overflow-y-auto"
+                                sideOffset={5}
+                            >
+                                {fontSizes.map((size) => (
+                                    <DropdownMenu.Item
+                                        key={size}
+                                        className="flex items-center justify-center px-3 py-2 text-sm text-[var(--text-secondary)] rounded-lg hover:bg-[var(--color-primary)]/20 cursor-pointer outline-none"
+                                        onSelect={() => {
+                                            editor.commands.setFontSize(size);
+                                            setFontSize(size);
+                                        }}
+                                    >
+                                        {size}
+                                    </DropdownMenu.Item>
+                                ))}
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
 
-            {/* HTML Block */}
-            <Button
-                onClick={addHtmlBlock}
-                title="Insert HTML Block"
-            >
-                <FileCode className="h-4 w-4" />
-            </Button>
+                    <div className="relative inline-flex items-center">
+                        <Button
+                            onClick={() => editor.chain().focus().setColor(textColor).run()}
+                            title="Text Color"
+                        >
+                            <Palette className="h-4 w-4" />
+                        </Button>
+                        <input
+                            type="color"
+                            value={textColor}
+                            onChange={(e) => {
+                                setTextColor(e.target.value);
+                                editor.chain().focus().setColor(e.target.value).run();
+                            }}
+                            className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[var(--border-secondary)] cursor-pointer"
+                            title="Choose Text Color"
+                        />
+                    </div>
 
-            {/* Emoji Picker */}
-            <EmojiPicker editor={editor} />
+                </>
+            )}
+
+            {/* HTML Block - Pro only */}
+            {isToolbarFeatureAvailable(tier, 'htmlBlock') && (
+                <>
+                    <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+                    <Button
+                        onClick={addHtmlBlock}
+                        title="Insert HTML Block"
+                    >
+                        <FileCode className="h-4 w-4" />
+                    </Button>
+                </>
+            )}
+
+            {/* Emoji Picker - Pro only */}
+            {isToolbarFeatureAvailable(tier, 'emoji') && (
+                <EmojiPicker editor={editor} />
+            )}
 
             {/* Image Dialog */}
             <ImageDialog
@@ -680,60 +620,20 @@ const MenuBar = ({ editor }) => {
     );
 };
 
-export default function BlogEditor({ content, onChange, placeholder = "Start writing your blog post..." }) {
+export default function BlogEditor({
+    content,
+    onChange,
+    placeholder = "Start writing your blog post...",
+    tier = 'pro',
+    dragHandleEnabled = false,
+}) {
+    // Build extensions based on tier and drag handle toggle
+    const extensions = useMemo(() => {
+        return buildExtensions(tier, dragHandleEnabled);
+    }, [tier, dragHandleEnabled]);
+
     const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Underline,
-            Typography,
-            TextStyle,
-            Color,
-            FontFamily,
-            TextAlign.configure({
-                types: ['heading', 'paragraph'],
-                alignments: ['left', 'center', 'right', 'justify'],
-            }),
-            Highlight.configure({
-                multicolor: true,
-            }),
-            Subscript,
-            Superscript,
-            HorizontalRule,
-            CustomImage,
-            Link.configure({
-                openOnClick: false,
-                HTMLAttributes: {
-                    class: '',
-                },
-            }),
-            CodeBlockLowlight.configure({
-                lowlight,
-                HTMLAttributes: {
-                    class: 'bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-sm border border-gray-700 my-4 overflow-x-auto',
-                },
-            }),
-            Table.configure({
-                resizable: true,
-                // Allow table to be selected as a single node for proper drag/drop behavior
-                allowTableNodeSelection: true,
-                HTMLAttributes: {
-                    class: 'border-collapse table-auto w-full',
-                },
-            }),
-            TableRow,
-            TableHeader.configure({
-                HTMLAttributes: {
-                    class: 'border border-gray-300 px-4 py-2 bg-gray-100 font-bold text-left',
-                },
-            }),
-            CustomTableCell.configure({
-                HTMLAttributes: {
-                    class: 'border border-gray-300 px-4 py-2',
-                },
-            }),
-            GlobalDragHandle.configure(dragHandleConfig),
-            HtmlBlock,
-        ],
+        extensions,
         content: content || '',
         onUpdate: ({ editor }) => {
             const html = editor.getHTML();
@@ -742,6 +642,13 @@ export default function BlogEditor({ content, onChange, placeholder = "Start wri
         immediatelyRender: false,
     });
 
+    // Re-create editor when tier or drag handle changes
+    useEffect(() => {
+        if (editor) {
+            // Destroy and recreate the editor is handled by key prop in parent
+        }
+    }, [tier, dragHandleEnabled, editor]);
+
     useEffect(() => {
         if (editor && content !== editor.getHTML()) {
             editor.commands.setContent(content || '');
@@ -749,17 +656,17 @@ export default function BlogEditor({ content, onChange, placeholder = "Start wri
     }, [content, editor]);
 
     // Initialize drag handle positioning
-    useDragHandle(editor);
+    useDragHandle(dragHandleEnabled ? editor : null);
 
     return (
         <div className="editor-container">
-            <MenuBar editor={editor} />
+            <MenuBar editor={editor} tier={tier} />
             <EditorContent
                 editor={editor}
                 className="min-h-[300px]"
                 placeholder={placeholder}
             />
-            {editor && <TableCellMenu editor={editor} />}
+            {editor && isToolbarFeatureAvailable(tier, 'table') && <TableCellMenu editor={editor} />}
         </div>
     );
 }

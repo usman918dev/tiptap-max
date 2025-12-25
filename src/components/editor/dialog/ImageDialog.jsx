@@ -133,7 +133,7 @@ export default function ImageDialog({ isOpen, onClose, onInsert }) {
                     />
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-[var(--text-primary)]">Alt Text (Accessibility) *</label>
+                        <label className="text-xs font-semibold text-[var(--text-primary)]">Alt Text (Accessibility)</label>
                         <input
                             type="text"
                             value={imageAlt}
@@ -143,7 +143,7 @@ export default function ImageDialog({ isOpen, onClose, onInsert }) {
                         />
                     </div>
 
-                    {imageUrl && (
+                    {/* {imageUrl && (
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-[var(--text-primary)]">Preview</label>
                             <div className="border-2 border-[var(--border-secondary)] rounded-xl p-2 max-h-48 overflow-hidden">
@@ -157,7 +157,7 @@ export default function ImageDialog({ isOpen, onClose, onInsert }) {
                                 />
                             </div>
                         </div>
-                    )}
+                    )} */}
                 </div>
 
                 <div className="px-5 py-3 bg-[var(--bg-surface)] rounded-b-2xl border-t border-[var(--border-secondary)] flex justify-end space-x-3 sticky bottom-0">

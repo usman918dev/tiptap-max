@@ -40,7 +40,7 @@ const DEFAULT_CONTENT = `
 <p>Try editing this text and refresh the page - your changes will persist.</p>
 `;
 
-export default function TiptapMaxEditor() {
+export default function TiptapMaxEditor({ tier = 'pro', dragHandleEnabled = false }) {
     const [content, setContent] = useState('');
     const [isLoaded, setIsLoaded] = useState(false);
     const [lastSaved, setLastSaved] = useState(null);
@@ -92,10 +92,14 @@ export default function TiptapMaxEditor() {
 
     return (
         <div className="space-y-4">
+            {/* Key forces re-initialization when tier or dragHandle changes */}
             <Editor
+                key={`${tier}-${dragHandleEnabled}`}
                 content={content}
                 onChange={handleContentChange}
                 placeholder="Start writing something amazing..."
+                tier={tier}
+                dragHandleEnabled={dragHandleEnabled}
             />
 
             {/* Status bar */}

@@ -2,13 +2,13 @@
 
 import { NodeViewWrapper } from '@tiptap/react';
 import { useState, useRef, useEffect } from 'react';
-import { 
-    AlignLeft, 
-    AlignCenter, 
-    AlignRight, 
-    Maximize2, 
+import {
+    AlignLeft,
+    AlignCenter,
+    AlignRight,
+    Maximize2,
     Trash2,
-    GripVertical 
+    GripVertical
 } from 'lucide-react';
 
 export default function ImageNodeView({ node, updateAttributes, deleteNode, selected }) {
@@ -95,33 +95,30 @@ export default function ImageNodeView({ node, updateAttributes, deleteNode, sele
                     <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-[var(--bg-elevated)] border border-[var(--border-secondary)] rounded-lg shadow-lg px-2 py-1.5 flex items-center gap-1 z-10 animate-fadeIn">
                         <button
                             onClick={() => handleAlignChange('left')}
-                            className={`p-1.5 rounded transition-colors ${
-                                align === 'left'
+                            className={`p-1.5 rounded transition-colors ${align === 'left'
                                     ? 'bg-[var(--color-primary)] text-white'
                                     : 'text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20'
-                            }`}
+                                }`}
                             title="Align Left"
                         >
                             <AlignLeft className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => handleAlignChange('center')}
-                            className={`p-1.5 rounded transition-colors ${
-                                align === 'center'
+                            className={`p-1.5 rounded transition-colors ${align === 'center'
                                     ? 'bg-[var(--color-primary)] text-white'
                                     : 'text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20'
-                            }`}
+                                }`}
                             title="Align Center"
                         >
                             <AlignCenter className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => handleAlignChange('right')}
-                            className={`p-1.5 rounded transition-colors ${
-                                align === 'right'
+                            className={`p-1.5 rounded transition-colors ${align === 'right'
                                     ? 'bg-[var(--color-primary)] text-white'
                                     : 'text-[var(--text-secondary)] hover:bg-[var(--color-primary)]/20'
-                            }`}
+                                }`}
                             title="Align Right"
                         >
                             <AlignRight className="w-4 h-4" />
@@ -146,9 +143,8 @@ export default function ImageNodeView({ node, updateAttributes, deleteNode, sele
 
                 {/* Image Container with Selection Border */}
                 <div
-                    className={`relative rounded-lg overflow-hidden ${
-                        selected ? 'ring-2 ring-[var(--color-primary)] ring-offset-2' : ''
-                    }`}
+                    className={`relative rounded-lg overflow-hidden ${selected ? 'ring-2 ring-[var(--color-primary)] ring-offset-2' : ''
+                        }`}
                 >
                     <img
                         ref={imageRef}
@@ -194,7 +190,7 @@ export default function ImageNodeView({ node, updateAttributes, deleteNode, sele
 
                 {/* Drag Handle Indicator */}
                 {(isHovered || selected) && (
-                    <div 
+                    <div
                         className="absolute -left-8 top-1/2 transform -translate-y-1/2 opacity-40 hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity"
                         data-drag-handle
                     >

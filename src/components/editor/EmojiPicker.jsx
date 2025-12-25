@@ -51,7 +51,7 @@ export default function EmojiPicker({ editor }) {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-[var(--bg-elevated)] border border-[var(--border-secondary)] rounded-xl shadow-xl z-50 w-[320px]">
+                <div className="absolute top-full -left-72 mt-2 bg-[var(--bg-elevated)] border border-[var(--border-secondary)] rounded-xl shadow-xl z-50 w-[320px]">
                     {/* Category tabs */}
                     <div className="flex gap-1 p-2 border-b border-[var(--border-secondary)] overflow-x-auto">
                         {Object.keys(EMOJI_CATEGORIES).map((category) => (
@@ -60,8 +60,8 @@ export default function EmojiPicker({ editor }) {
                                 type="button"
                                 onClick={() => setActiveCategory(category)}
                                 className={`px-2 py-1 text-xs font-medium rounded-lg whitespace-nowrap transition-colors ${activeCategory === category
-                                        ? 'bg-[var(--color-primary)] text-white'
-                                        : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
+                                    ? 'bg-[var(--color-primary)] text-white'
+                                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
                                     }`}
                             >
                                 {category}

@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@plugin "@tailwindcss/typography";
 /* Tell Tailwind v4 where to scan for utility classes */
 @source "../components/**/*.{js,jsx,ts,tsx}";
 @source "./**/*.{js,jsx,ts,tsx}";
@@ -168,7 +168,7 @@ body {
    TYPOGRAPHY
    ============================================ */
 
-h1,
+/* h1,
 h2,
 h3,
 h4,
@@ -195,7 +195,7 @@ p {
   color: var(--text-secondary);
   font-size: 1.125rem;
   line-height: 1.8;
-}
+} */
 
 /* ============================================
    ANIMATION KEYFRAMES
@@ -339,9 +339,9 @@ p {
   padding: 1.5rem;
   padding-left: 3rem;
   outline: none;
-  font-size: 1rem;
-  line-height: 1.7;
-  color: var(--text-primary);
+  /* font-size: 1rem; */
+  /* line-height: 1.7; */
+  /* color: var(--text-primary); */
   position: relative;
 }
 
@@ -459,6 +459,7 @@ p {
   background-color: rgba(139, 92, 246, 0.03);
 }
 
+/* 
 .ProseMirror p {
   margin-bottom: 1rem;
   color: var(--text-primary);
@@ -531,7 +532,7 @@ p {
   border-radius: var(--radius-md);
   margin: 1rem 0;
   display: block;
-}
+} */
 
 /* Image size variants */
 .ProseMirror img.float-left,
@@ -562,17 +563,17 @@ p {
   clear: both;
 }
 
-.ProseMirror hr {
+/* .ProseMirror hr {
   border: none;
   border-top: 2px solid var(--border-secondary);
   margin: 2rem 0;
-}
+} */
 
-.ProseMirror mark {
+/* .ProseMirror mark {
   background-color: rgba(245, 158, 11, 0.3);
   padding: 0.1em 0;
   border-radius: 2px;
-}
+} */
 
 /* Table Styles */
 .ProseMirror .tableWrapper {
@@ -1133,7 +1134,7 @@ p {
    ============================================ */
 
 /* Bullet List */
-.ProseMirror ul {
+/* .ProseMirror ul {
   list-style-type: disc;
   padding-left: 1.5rem;
   margin: 0.75rem 0;
@@ -1151,10 +1152,10 @@ p {
 
 .ProseMirror ul ul ul {
   list-style-type: square;
-}
+} */
 
 /* Ordered List */
-.ProseMirror ol {
+/* .ProseMirror ol {
   list-style-type: decimal;
   padding-left: 1.5rem;
   margin: 0.75rem 0;
@@ -1172,10 +1173,10 @@ p {
 
 .ProseMirror ol ol ol {
   list-style-type: lower-roman;
-}
+} */
 
 /* Task List (Todo) */
-.ProseMirror ul[data-type="taskList"],
+/* .ProseMirror ul[data-type="taskList"],
 .ProseMirror .task-list {
   list-style: none;
   padding-left: 0;
@@ -1241,19 +1242,19 @@ p {
 .ProseMirror .task-list .task-item>div {
   flex: 1;
   min-width: 0;
-}
+} */
 
 /* Checked task item text style */
-.ProseMirror ul[data-type="taskList"] li[data-checked="true"]>div,
+/* .ProseMirror ul[data-type="taskList"] li[data-checked="true"]>div,
 .ProseMirror .task-list .task-item[data-checked="true"]>div {
   text-decoration: line-through;
   color: var(--text-muted);
-}
+} */
 
 /* Nested task lists */
-.ProseMirror ul[data-type="taskList"] ul[data-type="taskList"],
+/* .ProseMirror ul[data-type="taskList"] ul[data-type="taskList"],
 .ProseMirror .task-list .task-list {
   margin-left: 1.5rem;
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
-}
+} */

@@ -1,13 +1,86 @@
 'use client';
 
 import TiptapMaxEditor from '@/components/editor/TiptapMaxEditor';
+import ProseSettingsDialog from '@/components/editor/dialog/ProseSettingsDialog';
+import EditorTierNav from '@/components/editor/EditorTierNav';
+import { TIER_STORAGE_KEY, DRAG_HANDLE_STORAGE_KEY, DEFAULT_TIER } from '@/components/editor/config/extensionTiers';
 import Link from 'next/link';
-import { ArrowLeft, Download, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, Trash2, Settings2 } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+const PROSE_SETTINGS_KEY = 'tiptap-prose-settings';
+
+const DEFAULT_PROSE_SETTINGS = {
+    size: 'prose-2xl',
+    color: 'prose-gray',
+    customClasses: '',
+    darkInvert: true,
+};
 
 export default function PlaygroundPage() {
-    const [showActions, setShowActions] = useState(true);
+    const [showProseSettings, setShowProseSettings] = useState(false);
+    const [proseSettings, setProseSettings] = useState(DEFAULT_PROSE_SETTINGS);
+    const [currentTier, setCurrentTier] = useState(DEFAULT_TIER);
+    const [dragHandleEnabled, setDragHandleEnabled] = useState(false);
+
+    // Load settings from localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            // Load prose settings
+            const savedProse = localStorage.getItem(PROSE_SETTINGS_KEY);
+            if (savedProse) {
+                try {
+                    setProseSettings(JSON.parse(savedProse));
+                } catch (e) {
+                    console.error('Failed to parse prose settings', e);
+                }
+            }
+            // Load tier preference
+            const savedTier = localStorage.getItem(TIER_STORAGE_KEY);
+            if (savedTier) {
+                setCurrentTier(savedTier);
+            }
+            // Load drag handle preference
+            const savedDragHandle = localStorage.getItem(DRAG_HANDLE_STORAGE_KEY);
+            if (savedDragHandle) {
+                setDragHandleEnabled(savedDragHandle === 'true');
+            }
+        }
+    }, []);
+
+    const handleProseSettingsApply = (settings) => {
+        setProseSettings(settings);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(PROSE_SETTINGS_KEY, JSON.stringify(settings));
+        }
+    };
+
+    const handleTierChange = (tier) => {
+        setCurrentTier(tier);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(TIER_STORAGE_KEY, tier);
+        }
+    };
+
+    const handleDragHandleToggle = () => {
+        const newValue = !dragHandleEnabled;
+        setDragHandleEnabled(newValue);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(DRAG_HANDLE_STORAGE_KEY, String(newValue));
+        }
+    };
+
+    const getProseClasses = () => {
+        const classes = ['prose', proseSettings.size, proseSettings.color];
+        if (!proseSettings.darkInvert) {
+            classes.push('dark:prose-invert');
+        }
+        if (proseSettings.customClasses) {
+            classes.push(proseSettings.customClasses);
+        }
+        return classes.join(' ');
+    };
 
     const handleDownloadHTML = () => {
         const content = localStorage.getItem('tiptap-max-content') || '';
@@ -37,7 +110,7 @@ export default function PlaygroundPage() {
                     <div className="flex items-center justify-between">
                         {/* Left: Back button and breadcrumb */}
                         <div className="flex items-center gap-4">
-                            <Link 
+                            <Link
                                 href="/"
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-secondary)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-all duration-300 text-[var(--text-secondary)] hover:text-[var(--color-primary)]"
                             >
@@ -63,6 +136,13 @@ export default function PlaygroundPage() {
 
                         {/* Right: Actions */}
                         <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setShowProseSettings(true)}
+                                className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-secondary)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-all duration-300 text-[var(--text-secondary)] hover:text-[var(--color-primary)] group"
+                                title="Editor Settings"
+                            >
+                                <Settings2 className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
+                            </button>
                             <button
                                 onClick={handleDownloadHTML}
                                 className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-secondary)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-all duration-300 text-[var(--text-secondary)] hover:text-[var(--color-primary)] group"
@@ -103,9 +183,20 @@ export default function PlaygroundPage() {
                         </div>
                     </div>
 
-                    {/* Editor */}
-                    <div className="animate-fadeIn">
-                        <TiptapMaxEditor />
+                    {/* Tier Navigation */}
+                    <EditorTierNav
+                        currentTier={currentTier}
+                        onTierChange={handleTierChange}
+                        dragHandleEnabled={dragHandleEnabled}
+                        onDragHandleToggle={handleDragHandleToggle}
+                    />
+
+                    {/* Editor with Prose Classes */}
+                    <div className={`${getProseClasses()} max-w-none animate-fadeIn`}>
+                        <TiptapMaxEditor
+                            tier={currentTier}
+                            dragHandleEnabled={dragHandleEnabled}
+                        />
                     </div>
 
                     {/* Keyboard Shortcuts Help */}
@@ -146,6 +237,14 @@ export default function PlaygroundPage() {
                     </button>
                 </div>
             </div>
+
+            {/* Prose Settings Dialog */}
+            <ProseSettingsDialog
+                isOpen={showProseSettings}
+                onClose={() => setShowProseSettings(false)}
+                onApply={handleProseSettingsApply}
+                currentSettings={proseSettings}
+            />
         </div>
     );
 }

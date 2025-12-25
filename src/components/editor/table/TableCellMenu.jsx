@@ -185,16 +185,16 @@ export default function TableCellMenu({ editor }) {
 
                 <div className="w-px h-5 bg-[var(--border-secondary)]" />
 
-                {/* Color Picker - Hover Dropdown */}
-                <div
-                    className="relative"
-                    onMouseEnter={() => setShowColors(true)}
-                    onMouseLeave={() => setShowColors(false)}
-                >
+                {/* Color Picker - Click Toggle Dropdown */}
+                <div className="relative">
                     <button
                         type="button"
-                        className="bubble-action-btn"
+                        className={`bubble-action-btn ${showColors ? 'bg-[var(--bg-secondary)]' : ''}`}
                         title="Cell Background Color"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowColors(!showColors);
+                        }}
                     >
                         <Palette className="h-4 w-4" />
                     </button>
