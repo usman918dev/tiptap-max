@@ -25,6 +25,10 @@ import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
 import CustomImage from '../extensions/CustomImage';
 import CustomTableCell from '../extensions/CustomTableCell';
 import FontSize from '../extensions/FontSize';
+import TweetEmbed from '../extensions/TweetEmbed';
+import SpaceIndent from '../extensions/SpaceIndent';
+import YoutubeEmbed from '../extensions/YoutubeEmbed';
+import DetailsNode, { DetailsSummary, DetailsContent } from '../extensions/DetailsExtension';
 import { dragHandleConfig } from '../DragHandle';
 
 const lowlight = createLowlight(common);
@@ -102,6 +106,7 @@ export function buildExtensions(tier, dragHandleEnabled = false) {
         StarterKit,
         Underline,
         Typography,
+        SpaceIndent,
         Link.configure({
             openOnClick: false,
             HTMLAttributes: {
@@ -134,6 +139,9 @@ export function buildExtensions(tier, dragHandleEnabled = false) {
                     class: 'bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-sm border border-gray-700 my-4 overflow-x-auto',
                 },
             }),
+            DetailsNode,
+            DetailsSummary,
+            DetailsContent,
         );
     }
 
@@ -159,6 +167,12 @@ export function buildExtensions(tier, dragHandleEnabled = false) {
                 },
             }),
             HtmlBlock,
+            YoutubeEmbed.configure({
+                controls: true,
+                nocookie: true,
+                allowFullscreen: true,
+            }),
+            TweetEmbed,
         );
     }
 
@@ -179,19 +193,20 @@ export function buildExtensions(tier, dragHandleEnabled = false) {
 export function isToolbarFeatureAvailable(tier, feature) {
     const essentialsFeatures = [
         'undo', 'redo', 'bold', 'italic', 'underline',
-        'headings', 'lists', 'link', 'unlink', 'quote'
+        'headings', 'lists', 'link', 'unlink', 'quote',
+        'indent', 'outdent'
     ];
 
     const enhancedFeatures = [
         ...essentialsFeatures,
         'alignment', 'highlight', 'subscript', 'superscript',
         'horizontalRule', 'image', 'code', 'codeBlock',
-        'fontFamily', 'fontSize', 'textColor'
+        'fontFamily', 'fontSize', 'textColor', 'details'
     ];
 
     const proFeatures = [
         ...enhancedFeatures,
-        'table', 'htmlBlock', 'emoji'
+        'table', 'htmlBlock', 'emoji', 'youtube', 'tweet'
     ];
 
     const featureMap = {

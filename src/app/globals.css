@@ -336,7 +336,9 @@ p {
 /* ProseMirror Editor Styles */
 .ProseMirror {
   min-height: 300px;
+  max-height: 600px;
   padding: 1.5rem;
+  overflow-y: scroll;
   padding-left: 3rem;
   outline: none;
   /* font-size: 1rem; */
@@ -581,8 +583,8 @@ p {
   margin: 1rem 0;
   border-radius: var(--radius-md);
   /* Custom scrollbar for table wrapper */
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-primary) var(--bg-surface);
+  /* scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) var(--bg-surface); */
 }
 
 .ProseMirror .tableWrapper::-webkit-scrollbar {
@@ -603,7 +605,7 @@ p {
   background: var(--color-primary-light);
 }
 
-.ProseMirror table {
+/* .ProseMirror table {
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
@@ -611,23 +613,23 @@ p {
   overflow: hidden;
   border-radius: var(--radius-md);
   min-width: 100%;
-}
+} */
 
 .ProseMirror td,
 .ProseMirror th {
-  min-width: 1em;
+  /* min-width: 1em;
   border: 1px solid var(--border-secondary);
   padding: 0.75rem 1rem;
   vertical-align: top;
-  box-sizing: border-box;
+  box-sizing: border-box; */
   position: relative;
 }
 
-.ProseMirror th {
+/* .ProseMirror th {
   font-weight: 600;
   text-align: left;
   background: rgba(139, 92, 246, 0.1);
-}
+} */
 
 .ProseMirror .selectedCell:after {
   z-index: 2;
@@ -966,7 +968,7 @@ p {
 }
 
 /* Table styling improvements */
-.ProseMirror table {
+/* .ProseMirror table {
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
@@ -988,7 +990,7 @@ p {
   padding: 0.75rem 1rem;
   min-width: 100px;
   vertical-align: top;
-}
+} */
 
 /* Cell background colors support */
 .ProseMirror td[data-background] {

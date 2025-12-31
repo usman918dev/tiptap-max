@@ -32,6 +32,7 @@ export const TIER_EXTENSIONS = {
         'underline',
         'link',
         'typography',
+        'spaceIndent',
     ],
     enhanced: [
         // Includes all essentials
@@ -39,6 +40,7 @@ export const TIER_EXTENSIONS = {
         'underline',
         'link',
         'typography',
+        'spaceIndent',
         // Plus enhanced features
         'textStyle',
         'fontSize',
@@ -51,6 +53,9 @@ export const TIER_EXTENSIONS = {
         'horizontalRule',
         'customImage',
         'codeBlockLowlight',
+        'details',
+        'detailsSummary',
+        'detailsContent',
     ],
     pro: [
         // Includes all enhanced
@@ -58,6 +63,7 @@ export const TIER_EXTENSIONS = {
         'underline',
         'link',
         'typography',
+        'spaceIndent',
         'textStyle',
         'fontSize',
         'color',
@@ -69,6 +75,9 @@ export const TIER_EXTENSIONS = {
         'horizontalRule',
         'customImage',
         'codeBlockLowlight',
+        'details',
+        'detailsSummary',
+        'detailsContent',
         // Plus pro features
         'table',
         'tableRow',
@@ -76,6 +85,8 @@ export const TIER_EXTENSIONS = {
         'customTableCell',
         'htmlBlock',
         'emojiPicker',
+        'youtube',
+        'tweetEmbed',
     ],
 };
 
@@ -92,6 +103,8 @@ export const TIER_TOOLBAR = {
         'link',
         'unlink',
         'quote',
+        'indent',
+        'outdent',
     ],
     enhanced: [
         // All essentials
@@ -105,6 +118,8 @@ export const TIER_TOOLBAR = {
         'link',
         'unlink',
         'quote',
+        'indent',
+        'outdent',
         // Plus enhanced
         'alignment',
         'highlight',
@@ -117,6 +132,7 @@ export const TIER_TOOLBAR = {
         'fontFamily',
         'fontSize',
         'textColor',
+        'details',
     ],
     pro: [
         // All enhanced
@@ -130,6 +146,8 @@ export const TIER_TOOLBAR = {
         'link',
         'unlink',
         'quote',
+        'indent',
+        'outdent',
         'alignment',
         'highlight',
         'subscript',
@@ -141,10 +159,13 @@ export const TIER_TOOLBAR = {
         'fontFamily',
         'fontSize',
         'textColor',
+        'details',
         // Plus pro
         'table',
         'htmlBlock',
         'emoji',
+        'youtube',
+        'tweet',
     ],
 };
 

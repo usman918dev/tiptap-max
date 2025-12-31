@@ -36,7 +36,14 @@ import {
     X,
     Type,
     Palette,
-    GripVertical
+    GripVertical,
+    Youtube,
+    Twitter,
+    IndentIncrease,
+    IndentDecrease,
+    ChevronRight,
+    Eye,
+    Edit3
 } from 'lucide-react';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -44,6 +51,8 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import LinkDialog from './dialog/LinkDialog';
 import ImageDialog from './dialog/ImageDialog';
 import HtmlDialog from './dialog/HtmlDialog';
+import YoutubeDialog from './dialog/YoutubeDialog';
+import TweetDialog from './dialog/TweetDialog';
 import TableControls from './table/TableControls';
 import TableCellMenu from './table/TableCellMenu';
 import EmojiPicker from './EmojiPicker';
@@ -52,10 +61,12 @@ import Button from '../Button';
 import { useDragHandle } from './DragHandle';
 import { buildExtensions, isToolbarFeatureAvailable } from './config/extensionBuilder';
 
-const MenuBar = ({ editor, tier = 'pro' }) => {
+const MenuBar = ({ editor, tier = 'pro', isPreview, setIsPreview }) => {
     const [showImageDialog, setShowImageDialog] = useState(false);
     const [showHtmlDialog, setShowHtmlDialog] = useState(false);
     const [showLinkDialog, setShowLinkDialog] = useState(false);
+    const [showYoutubeDialog, setShowYoutubeDialog] = useState(false);
+    const [showTweetDialog, setShowTweetDialog] = useState(false);
     const [htmlContent, setHtmlContent] = useState('');
     const [isInTable, setIsInTable] = useState(false);
     const [highlightColor, setHighlightColor] = useState('#fef08a');
@@ -185,6 +196,21 @@ const MenuBar = ({ editor, tier = 'pro' }) => {
         editor.chain().focus().unsetLink().run();
     }, [editor]);
 
+    const handleYoutubeInsert = useCallback(({ src }) => {
+        if (!editor) return;
+        editor.chain().focus().setYoutubeVideo({ src }).run();
+    }, [editor]);
+
+    const handleTweetInsert = useCallback(({ url }) => {
+        if (!editor) return;
+        editor.chain().focus().setTweetEmbed({ url }).run();
+    }, [editor]);
+
+    const insertDetails = useCallback(() => {
+        if (!editor) return;
+        editor.chain().focus().setDetails().run();
+    }, [editor]);
+
     if (!editor) {
         return null;
     }
@@ -193,10 +219,22 @@ const MenuBar = ({ editor, tier = 'pro' }) => {
 
     return (
         <div className="editor-toolbar flex flex-wrap gap-1 items-center">
+            {/* Preview Toggle */}
+            <Button
+                onClick={() => setIsPreview(!isPreview)}
+                isActive={isPreview}
+                title={isPreview ? "Edit Mode" : "Preview Mode"}
+            >
+                {isPreview ? <Edit3 className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+
             {/* Undo/Redo - Most Important */}
             <Button
                 onClick={() => editor.chain().focus().undo().run()}
                 title="Undo (Ctrl+Z)"
+                disabled={isPreview}
             >
                 <Undo className="h-4 w-4" />
             </Button>
@@ -428,6 +466,25 @@ const MenuBar = ({ editor, tier = 'pro' }) => {
                 <Quote className="h-4 w-4" />
             </Button>
 
+            {/* Indent Controls - Essentials+ */}
+            {isToolbarFeatureAvailable(tier, 'indent') && (
+                <>
+                    <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+                    <Button
+                        onClick={() => editor.chain().focus().increaseIndent().run()}
+                        title="Increase Indent (Tab)"
+                    >
+                        <IndentIncrease className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        onClick={() => editor.chain().focus().decreaseIndent().run()}
+                        title="Decrease Indent (Shift+Tab)"
+                    >
+                        <IndentDecrease className="h-4 w-4" />
+                    </Button>
+                </>
+            )}
+
             {/* Table - Pro only */}
             {isToolbarFeatureAvailable(tier, 'table') && (
                 <>
@@ -478,6 +535,20 @@ const MenuBar = ({ editor, tier = 'pro' }) => {
                         title="Horizontal Rule"
                     >
                         <MinusIcon className="h-4 w-4" />
+                    </Button>
+                </>
+            )}
+
+            {/* Details/FAQ - Enhanced+ */}
+            {isToolbarFeatureAvailable(tier, 'details') && (
+                <>
+                    <div className="w-px h-6 bg-[var(--border-secondary)] mx-1" />
+                    <Button
+                        onClick={insertDetails}
+                        isActive={editor.isActive('details')}
+                        title="Insert FAQ / Collapsible Section"
+                    >
+                        <ChevronRight className="h-4 w-4" />
                     </Button>
                 </>
             )}
@@ -588,6 +659,26 @@ const MenuBar = ({ editor, tier = 'pro' }) => {
                 </>
             )}
 
+            {/* YouTube Embed - Pro only */}
+            {isToolbarFeatureAvailable(tier, 'youtube') && (
+                <Button
+                    onClick={() => setShowYoutubeDialog(true)}
+                    title="Embed YouTube Video"
+                >
+                    <Youtube className="h-4 w-4" />
+                </Button>
+            )}
+
+            {/* Tweet Embed - Pro only */}
+            {isToolbarFeatureAvailable(tier, 'tweet') && (
+                <Button
+                    onClick={() => setShowTweetDialog(true)}
+                    title="Embed Tweet"
+                >
+                    <Twitter className="h-4 w-4" />
+                </Button>
+            )}
+
             {/* Emoji Picker - Pro only */}
             {isToolbarFeatureAvailable(tier, 'emoji') && (
                 <EmojiPicker editor={editor} />
@@ -616,6 +707,20 @@ const MenuBar = ({ editor, tier = 'pro' }) => {
                 onInsert={handleLinkInsert}
                 editor={editor}
             />
+
+            {/* YouTube Dialog */}
+            <YoutubeDialog
+                isOpen={showYoutubeDialog}
+                onClose={() => setShowYoutubeDialog(false)}
+                onInsert={handleYoutubeInsert}
+            />
+
+            {/* Tweet Dialog */}
+            <TweetDialog
+                isOpen={showTweetDialog}
+                onClose={() => setShowTweetDialog(false)}
+                onInsert={handleTweetInsert}
+            />
         </div>
     );
 };
@@ -627,6 +732,8 @@ export default function BlogEditor({
     tier = 'pro',
     dragHandleEnabled = false,
 }) {
+    const [isPreview, setIsPreview] = useState(false);
+
     // Build extensions based on tier and drag handle toggle
     const extensions = useMemo(() => {
         return buildExtensions(tier, dragHandleEnabled);
@@ -660,13 +767,23 @@ export default function BlogEditor({
 
     return (
         <div className="editor-container">
-            <MenuBar editor={editor} tier={tier} />
-            <EditorContent
-                editor={editor}
-                className="min-h-[300px]"
-                placeholder={placeholder}
-            />
-            {editor && isToolbarFeatureAvailable(tier, 'table') && <TableCellMenu editor={editor} />}
+            <MenuBar editor={editor} tier={tier} isPreview={isPreview} setIsPreview={setIsPreview} />
+            
+            {isPreview ? (
+                <div 
+                    className="preview-content min-h-[300px] prose prose-invert max-w-none "
+                    dangerouslySetInnerHTML={{ __html: editor?.getHTML() || '' }}
+                />
+            ) : (
+                <>
+                    <EditorContent
+                        editor={editor}
+                        className="min-h-[300px]"
+                        placeholder={placeholder}
+                    />
+                    {editor && isToolbarFeatureAvailable(tier, 'table') && <TableCellMenu editor={editor} />}
+                </>
+            )}
         </div>
     );
 }
