@@ -5,9 +5,11 @@ import ProseSettingsDialog from '@/components/editor/dialog/ProseSettingsDialog'
 import EditorTierNav from '@/components/editor/EditorTierNav';
 import { TIER_STORAGE_KEY, DRAG_HANDLE_STORAGE_KEY, DEFAULT_TIER } from '@/components/editor/config/extensionTiers';
 import Link from 'next/link';
-import { ArrowLeft, Download, Trash2, Settings2 } from 'lucide-react';
+import { ArrowLeft, Download, Trash2, Settings2, FileText, FileJson, FileCog, Printer, ChevronDown } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useState, useEffect } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { exportAsHTML, exportAsJSON, exportAsText, exportAsRTF, exportAsPDF, generateFilename } from '@/lib/export-utils';
 
 const PROSE_SETTINGS_KEY = 'tiptap-prose-settings';
 
@@ -23,6 +25,7 @@ export default function PlaygroundPage() {
     const [proseSettings, setProseSettings] = useState(DEFAULT_PROSE_SETTINGS);
     const [currentTier, setCurrentTier] = useState(DEFAULT_TIER);
     const [dragHandleEnabled, setDragHandleEnabled] = useState(false);
+    const [editorInstance, setEditorInstance] = useState(null);
 
     // Load settings from localStorage
     useEffect(() => {
@@ -80,6 +83,37 @@ export default function PlaygroundPage() {
             classes.push(proseSettings.customClasses);
         }
         return classes.join(' ');
+    };
+
+    const handleExportHTML = () => {
+        const filename = generateFilename();
+        const content = localStorage.getItem('tiptap-max-content') || '';
+        exportAsHTML(content, filename);
+    };
+
+    const handleExportJSON = () => {
+        if (editorInstance) {
+            const filename = generateFilename();
+            exportAsJSON(editorInstance, filename);
+        }
+    };
+
+    const handleExportText = () => {
+        if (editorInstance) {
+            const filename = generateFilename();
+            exportAsText(editorInstance, filename);
+        }
+    };
+
+    const handleExportRTF = () => {
+        const filename = generateFilename();
+        const content = localStorage.getItem('tiptap-max-content') || '';
+        exportAsRTF(content, filename);
+    };
+
+    const handleExportPDF = () => {
+        const content = localStorage.getItem('tiptap-max-content') || '';
+        exportAsPDF(content, generateFilename());
     };
 
     const handleDownloadHTML = () => {
@@ -143,13 +177,43 @@ export default function PlaygroundPage() {
                             >
                                 <Settings2 className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
                             </button>
-                            <button
-                                onClick={handleDownloadHTML}
-                                className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-secondary)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-all duration-300 text-[var(--text-secondary)] hover:text-[var(--color-primary)] group"
-                                title="Download as HTML"
-                            >
-                                <Download className="w-5 h-5" />
-                            </button>
+                            
+                            {/* Export Dropdown */}
+                            <DropdownMenu.Root>
+                                <DropdownMenu.Trigger asChild>
+                                    <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] text-white hover:opacity-90 transition-all duration-300 shadow-[var(--shadow-button)]">
+                                        <Download className="w-5 h-5" />
+                                        <span className="hidden sm:inline">Export</span>
+                                        <ChevronDown className="w-4 h-4" />
+                                    </button>
+                                </DropdownMenu.Trigger>
+                                <DropdownMenu.Portal>
+                                    <DropdownMenu.Content className="min-w-[220px] bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-primary)] p-2 shadow-[var(--shadow-card)] z-50" sideOffset={5}>
+                                        <DropdownMenu.Item className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)] hover:text-white cursor-pointer outline-none transition-all" onClick={handleExportHTML}>
+                                            <FileText className="w-4 h-4" />
+                                            <span>Export as HTML</span>
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Item className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)] hover:text-white cursor-pointer outline-none transition-all" onClick={handleExportJSON}>
+                                            <FileJson className="w-4 h-4" />
+                                            <span>Export as JSON</span>
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Item className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)] hover:text-white cursor-pointer outline-none transition-all" onClick={handleExportText}>
+                                            <FileCog className="w-4 h-4" />
+                                            <span>Export as Text</span>
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Item className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)] hover:text-white cursor-pointer outline-none transition-all" onClick={handleExportRTF}>
+                                            <FileText className="w-4 h-4" />
+                                            <span>Export as RTF</span>
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Separator className="h-px bg-[var(--border-secondary)] my-2" />
+                                        <DropdownMenu.Item className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)] hover:text-white cursor-pointer outline-none transition-all" onClick={handleExportPDF}>
+                                            <Printer className="w-4 h-4" />
+                                            <span>Print / Save as PDF</span>
+                                        </DropdownMenu.Item>
+                                    </DropdownMenu.Content>
+                                </DropdownMenu.Portal>
+                            </DropdownMenu.Root>
+                            
                             <button
                                 onClick={handleClearContent}
                                 className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-secondary)] hover:border-red-500 hover:bg-red-500/10 transition-all duration-300 text-[var(--text-secondary)] hover:text-red-500 group"
@@ -196,6 +260,7 @@ export default function PlaygroundPage() {
                         <TiptapMaxEditor
                             tier={currentTier}
                             dragHandleEnabled={dragHandleEnabled}
+                            onEditorReady={setEditorInstance}
                         />
                     </div>
 
@@ -227,15 +292,38 @@ export default function PlaygroundPage() {
 
             {/* Floating Action Hint (Mobile) */}
             <div className="lg:hidden fixed bottom-6 right-6 z-40">
-                <div className="flex flex-col gap-2">
-                    <button
-                        onClick={handleDownloadHTML}
-                        className="p-4 rounded-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] text-white shadow-[var(--shadow-button)] hover:scale-110 transition-all duration-300"
-                        title="Download HTML"
-                    >
-                        <Download className="w-5 h-5" />
-                    </button>
-                </div>
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                        <button className="p-4 rounded-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] text-white shadow-[var(--shadow-button)] hover:scale-110 transition-all duration-300" title="Export Options">
+                            <Download className="w-5 h-5" />
+                        </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content className="min-w-[220px] bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-primary)] p-2 shadow-[var(--shadow-card)] z-50 mb-2" sideOffset={5} align="end">
+                            <DropdownMenu.Item className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)] hover:text-white cursor-pointer outline-none transition-all" onClick={handleExportHTML}>
+                                <FileText className="w-4 h-4" />
+                                <span>Export as HTML</span>
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)] hover:text-white cursor-pointer outline-none transition-all" onClick={handleExportJSON}>
+                                <FileJson className="w-4 h-4" />
+                                <span>Export as JSON</span>
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)] hover:text-white cursor-pointer outline-none transition-all" onClick={handleExportText}>
+                                <FileCog className="w-4 h-4" />
+                                <span>Export as Text</span>
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)] hover:text-white cursor-pointer outline-none transition-all" onClick={handleExportRTF}>
+                                <FileText className="w-4 h-4" />
+                                <span>Export as RTF</span>
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Separator className="h-px bg-[var(--border-secondary)] my-2" />
+                            <DropdownMenu.Item className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--color-primary)] hover:text-white cursor-pointer outline-none transition-all" onClick={handleExportPDF}>
+                                <Printer className="w-4 h-4" />
+                                <span>Print / Save as PDF</span>
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
             </div>
 
             {/* Prose Settings Dialog */}

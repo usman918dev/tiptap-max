@@ -727,8 +727,7 @@ const MenuBar = ({ editor, tier = 'pro', isPreview, setIsPreview }) => {
 
 export default function BlogEditor({
     content,
-    onChange,
-    placeholder = "Start writing your blog post...",
+    onChange,    onEditorReady,    placeholder = "Start writing your blog post...",
     tier = 'pro',
     dragHandleEnabled = false,
 }) {
@@ -748,6 +747,13 @@ export default function BlogEditor({
         },
         immediatelyRender: false,
     });
+
+    // Expose editor instance to parent
+    useEffect(() => {
+        if (editor && onEditorReady) {
+            onEditorReady(editor);
+        }
+    }, [editor, onEditorReady]);
 
     // Re-create editor when tier or drag handle changes
     useEffect(() => {

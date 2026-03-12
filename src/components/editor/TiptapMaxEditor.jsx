@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { DEFAULT_CONTENT } from '@/lib/defaultContent';
 
 // Dynamic import to avoid SSR issues with Tiptap
 const Editor = dynamic(() => import('./Editor'), {
@@ -21,29 +22,11 @@ const Editor = dynamic(() => import('./Editor'), {
 
 const STORAGE_KEY = 'tiptap-max-content';
 
-const DEFAULT_CONTENT = `
-<h1>Welcome to Tiptap-Max ✨</h1>
-<p>This is a <strong>premium rich text editor</strong> built on Tiptap. Start typing to experience the power of modern content editing!</p>
-<h2>Features you can try:</h2>
-<ul>
-  <li>✏️ <strong>Bold</strong>, <em>italic</em>, and <u>underline</u> text</li>
-  <li>📋 Bullet and numbered lists</li>
-  <li>💻 Code blocks with syntax highlighting</li>
-  <li>📊 Tables with resizable columns</li>
-  <li>🖼️ Image embedding</li>
-  <li>🔗 Links with custom styling</li>
-</ul>
-<blockquote>
-  <p>💡 <strong>Pro tip:</strong> Your content is automatically saved to local storage!</p>
-</blockquote>
-<a href="techo.com">techo</a>
-<p>Try editing this text and refresh the page - your changes will persist.</p>
-`;
-
-export default function TiptapMaxEditor({ tier = 'pro', dragHandleEnabled = false }) {
+export default function TiptapMaxEditor({ tier = 'pro', dragHandleEnabled = false, onEditorReady }) {
     const [content, setContent] = useState('');
     const [isLoaded, setIsLoaded] = useState(false);
     const [lastSaved, setLastSaved] = useState(null);
+    const editorRef = useRef(null);
 
     // Load content from localStorage on mount
     useEffect(() => {
@@ -66,6 +49,12 @@ export default function TiptapMaxEditor({ tier = 'pro', dragHandleEnabled = fals
             setLastSaved(new Date());
         }
     }, []);
+
+    // Handle editor ready callback
+    const handleEditorReady = useCallback((editor) => {
+        editorRef.current = editor;
+        onEditorReady?.(editor);
+    }, [onEditorReady]);
 
     // Clear content handler
     const handleClear = useCallback(() => {
@@ -97,6 +86,7 @@ export default function TiptapMaxEditor({ tier = 'pro', dragHandleEnabled = fals
                 key={`${tier}-${dragHandleEnabled}`}
                 content={content}
                 onChange={handleContentChange}
+                onEditorReady={handleEditorReady}
                 placeholder="Start writing something amazing..."
                 tier={tier}
                 dragHandleEnabled={dragHandleEnabled}
