@@ -18,8 +18,8 @@ export function useDragHandle(editor) {
                 if (editorContainer) {
                     const containerRect = editorContainer.getBoundingClientRect();
                     const currentTop = dragHandle.style.top;
-                    // Keep left position fixed relative to editor container
-                    dragHandle.style.left = `${containerRect.left + 8}px`;
+                    // Position very close to content area (10rem padding = 160px, so position at ~145px from left)
+                    dragHandle.style.left = `${containerRect.left + 130}px`;
                     dragHandle.style.top = currentTop; // Keep the top position calculated by the extension
                 }
             }

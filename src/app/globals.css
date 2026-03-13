@@ -339,12 +339,54 @@ p {
   max-height: 600px;
   padding: 5rem 10rem;
   overflow-y: scroll;
- 
   outline: none;
-  /* font-size: 1rem; */
-  /* line-height: 1.7; */
-  /* color: var(--text-primary); */
   position: relative;
+  /* Explicit color styling for both themes */
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* Ensure all text elements use the theme colors */
+.ProseMirror p,
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6,
+.ProseMirror li {
+  color: var(--text-primary);
+}
+
+.ProseMirror blockquote {
+  color: var(--text-secondary);
+}
+
+/* Preview Content Styles */
+.preview-content {
+  padding: 2rem;
+  background: var(--editor-bg);
+}
+
+/* Apply prose-invert styling for dark theme on preview */
+.preview-content.prose {
+  --tw-prose-body: var(--text-primary);
+  --tw-prose-headings: var(--text-primary);
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-bold: var(--text-primary);
+  --tw-prose-code: var(--color-primary-light);
+  --tw-prose-quotes: var(--text-secondary);
+}
+
+/* Light theme overrides for preview prose */
+[data-theme="light"] .preview-content.prose {
+  --tw-prose-body: var(--text-primary);
+  --tw-prose-headings: var(--text-primary);
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-bold: var(--text-primary);
+  --tw-prose-code: var(--color-primary);
+  --tw-prose-quotes: var(--text-secondary);
 }
 
 /* Drag and Drop Styles */
@@ -360,6 +402,17 @@ p {
   color: var(--text-muted);
   border-radius: 6px;
   z-index: 50;
+}
+
+/* Add a larger hover area to prevent handle from disappearing */
+.drag-handle::after {
+  content: '';
+  position: absolute;
+  left: -20px;
+  right: -10px;
+  top: -10px;
+  bottom: -10px;
+  /* Invisible hover detection area */
 }
 
 .drag-handle.hide {

@@ -777,7 +777,7 @@ export default function BlogEditor({
             
             {isPreview ? (
                 <div 
-                    className="preview-content min-h-[300px] prose prose-invert max-w-none "
+                    className="preview-content min-h-[300px] prose max-w-none"
                     dangerouslySetInnerHTML={{ __html: editor?.getHTML() || '' }}
                 />
             ) : (
